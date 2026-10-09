@@ -519,7 +519,7 @@ export function usePeerConnection() {
   }, []);
 
   const addDemoPeer = useCallback(() => {
-    const demoNames = ['Alpha-PC', 'Beta-Workstation', 'Gamma-Laptop', 'Delta-Desktop', 'Epsilon-Mac'];
+    const demoNames = ['🎭 DEMO - Alpha-PC', '🎭 DEMO - Beta-Workstation', '🎭 DEMO - Gamma-Laptop', '🎭 DEMO - Delta-Desktop', '🎭 DEMO - Epsilon-Mac'];
     const name = demoNames[peers.length % demoNames.length];
     const id = generateId();
     
@@ -531,16 +531,16 @@ export function usePeerConnection() {
       lastSeen: new Date()
     }]);
 
-    // Simulate a high-speed file receive
+    // Simulate a high-speed file receive (DEMO ONLY - not real)
     setTimeout(() => {
       const transferId = generateId();
       const fileSize = Math.floor(Math.random() * 500_000_000) + 50_000_000; // 50-550 MB
       const startTime = Date.now();
       
-      // Simulate progressive transfer at high speed
+      // Simulate progressive transfer at high speed (DEMO SIMULATION)
       setTransfers(prev => [...prev, {
         id: transferId,
-        fileName: `project_files_${Math.floor(Math.random() * 100)}.zip`,
+        fileName: `🎭 DEMO - project_files_${Math.floor(Math.random() * 100)}.zip`,
         fileSize,
         fileType: 'application/zip',
         progress: 0,

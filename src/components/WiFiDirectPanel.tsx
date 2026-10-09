@@ -43,6 +43,7 @@ export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = f
     } else {
       // In browser, WiFi Direct requires native APIs
       setIsSupported(false);
+      setError('⚠️ WiFi Direct requires the desktop app (.exe). This is a DEMO preview only - connections will not actually work in browser mode.');
     }
   };
 
@@ -55,12 +56,15 @@ export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = f
         const discoveredPeers = await window.electronAPI.scanWiFiDirectPeers();
         setPeers(discoveredPeers as WiFiDirectPeer[]);
       } else {
-        // Demo mode - simulate discovered peers
+        // Demo mode - show warning
+        setError('🎭 DEMO MODE: These are fake devices. WiFi Direct only works in the desktop app (.exe). Build and run the .exe to use real WiFi Direct connections.');
+        
+        // Still show demo data for UI preview
         await new Promise(resolve => setTimeout(resolve, 1500));
         setPeers([
           {
             id: 'wfd-001',
-            name: 'Musah-Laptop',
+            name: '🎭 DEMO - Musah-Laptop',
             signalStrength: 85,
             status: 'available',
             isGroupOwner: true,
@@ -68,7 +72,7 @@ export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = f
           },
           {
             id: 'wfd-002',
-            name: 'Ibrahim-Phone',
+            name: '🎭 DEMO - Ibrahim-Phone',
             signalStrength: 72,
             status: 'available',
             isGroupOwner: false,
@@ -76,7 +80,7 @@ export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = f
           },
           {
             id: 'wfd-003',
-            name: 'Office-Printer',
+            name: '🎭 DEMO - Office-Printer',
             signalStrength: 45,
             status: 'available',
             isGroupOwner: true,
@@ -85,7 +89,7 @@ export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = f
         ]);
       }
     } catch (err: any) {
-      setError(`Scan failed: ${err.message}`);
+      setError(`❌ Scan failed: ${err.message}`);
     } finally {
       setIsScanning(false);
     }

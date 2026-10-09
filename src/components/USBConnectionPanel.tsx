@@ -26,6 +26,11 @@ export const USBConnectionPanel: React.FC<USBConnectionPanelProps> = ({
     } else {
       setIsSupported(false);
     }
+    
+    // Check secure context
+    if (!window.isSecureContext) {
+      setError('❌ USB connection requires a secure context. Please run via "npm run dev" (localhost) or use HTTPS.');
+    }
   }, []);
 
   const loadAuthorizedDevices = async () => {
@@ -42,6 +47,8 @@ export const USBConnectionPanel: React.FC<USBConnectionPanelProps> = ({
       setError('');
       setIsConnecting(true);
 
+      console.log('Opening USB device picker...');
+
       // Request USB device (shows browser's device picker)
       const device = await (navigator as any).usb.requestDevice({
         filters: [
@@ -49,6 +56,8 @@ export const USBConnectionPanel: React.FC<USBConnectionPanelProps> = ({
           // In production, you'd specify vendor/product IDs
         ],
       });
+      
+      console.log('USB device selected:', device.productName);
 
       if (device) {
         // Open the device
@@ -82,11 +91,17 @@ export const USBConnectionPanel: React.FC<USBConnectionPanelProps> = ({
         });
       }
     } catch (err: any) {
+      console.error('USB connection error:', err);
+      
       if (err.name === 'NotFoundError') {
         // User cancelled
         setError('');
+      } else if (err.name === 'SecurityError') {
+        setError('❌ USB requires a secure context (HTTPS or localhost). Please run via "npm run dev".');
+      } else if (err.name === 'NotSupportedError') {
+        setError('❌ USB operation not supported. Make sure USB debugging is enabled on your device.');
       } else {
-        setError(`Failed to connect: ${err.message}`);
+        setError(`❌ USB connection failed: ${err.message || 'Unknown error'}`);
       }
     } finally {
       setIsConnecting(false);
@@ -224,7 +239,7 @@ export const USBConnectionPanel: React.FC<USBConnectionPanelProps> = ({
             {isConnecting ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                Connecting...
+                Opening Device Picker...
               </>
             ) : (
               <>
@@ -233,6 +248,14 @@ export const USBConnectionPanel: React.FC<USBConnectionPanelProps> = ({
               </>
             )}
           </button>
+
+          {isConnecting && (
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3">
+              <p className="text-xs text-cyan-300 text-center">
+                🔌 A device picker dialog should appear. Select a USB device to connect.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-900/20 border border-red-800 rounded-lg p-3 flex items-center gap-2">

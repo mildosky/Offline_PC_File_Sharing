@@ -36,6 +36,7 @@ export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false }) => {
       }
     } else {
       setIsSupported(false);
+      setError('⚠️ NFC requires the desktop app (.exe). This is a DEMO preview only - connections will not actually work in browser mode.');
     }
   };
 
@@ -56,25 +57,28 @@ export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false }) => {
           });
         });
       } else {
-        // Demo mode
+        // Demo mode - show warning
+        setError('🎭 DEMO MODE: These are fake devices. NFC only works in the desktop app (.exe). Build and run the .exe to use real NFC connections.');
+        
+        // Still show demo data for UI preview
         await new Promise(resolve => setTimeout(resolve, 1500));
         setDetectedDevices([
           {
             id: 'nfc-001',
-            name: 'Musah-Phone',
+            name: '🎭 DEMO - Musah-Phone',
             type: 'smartphone',
             status: 'detected',
           },
           {
             id: 'nfc-002',
-            name: 'Ibrahim-Tablet',
+            name: '🎭 DEMO - Ibrahim-Tablet',
             type: 'tablet',
             status: 'detected',
           },
         ]);
       }
     } catch (err: any) {
-      setError(`NFC scan failed: ${err.message}`);
+      setError(`❌ NFC scan failed: ${err.message}`);
     } finally {
       setIsScanning(false);
     }

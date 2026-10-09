@@ -248,11 +248,14 @@ export function ConnectionPanel({
             <span className="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">{peers.length}</span>
           </div>
           <button
-            onClick={addDemoPeer}
+            onClick={() => {
+              addDemoPeer();
+              alert('🎭 Demo peer added for UI testing only. File transfers will NOT work with demo peers. Connect to a real peer to transfer files.');
+            }}
             className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
-            title="Add demo peer for testing"
+            title="Add demo peer for UI testing only - file transfers won't work"
           >
-            + Demo
+            + Demo (UI Only)
           </button>
         </div>
 

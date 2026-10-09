@@ -5,15 +5,22 @@ interface NetworkStatusProps {
   isListening: boolean;
   peerCount: number;
   activeTransfers: number;
+  isElectron?: boolean;
+  localIPs?: string[];
 }
 
-export function NetworkStatus({ isListening, peerCount, activeTransfers }: NetworkStatusProps) {
+export function NetworkStatus({ isListening, peerCount, activeTransfers, isElectron = false, localIPs = [] }: NetworkStatusProps) {
   const [localIP, setLocalIP] = useState<string>('Detecting...');
 
   useEffect(() => {
-    // Detect local IP using WebRTC (no internet needed)
-    detectLocalIP().then(ip => setLocalIP(ip));
-  }, []);
+    // Use Electron API if available, otherwise fall back to WebRTC
+    if (isElectron && window.electronAPI && localIPs.length > 0) {
+      setLocalIP(localIPs[0]);
+    } else {
+      // Detect local IP using WebRTC (no internet needed)
+      detectLocalIP().then(ip => setLocalIP(ip));
+    }
+  }, [isElectron, localIPs]);
 
   return (
     <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-5">

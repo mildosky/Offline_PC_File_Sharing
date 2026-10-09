@@ -16,9 +16,10 @@ interface FileTransferProps {
     startTime: number;
     elapsedMs: number;
   };
+  isElectron?: boolean;
 }
 
-export function FileTransfer({ peers, transfers, sendFile, globalSpeed }: FileTransferProps) {
+export function FileTransfer({ peers, transfers, sendFile, globalSpeed, isElectron = false }: FileTransferProps) {
   const [selectedPeer, setSelectedPeer] = useState<string>('');
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -54,6 +55,20 @@ export function FileTransfer({ peers, transfers, sendFile, globalSpeed }: FileTr
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
       setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  // Use native file dialog in Electron
+  const handleNativeFileSelect = async () => {
+    if (isElectron && window.electronAPI) {
+      const filePaths = await window.electronAPI.selectFiles();
+      if (filePaths && filePaths.length > 0) {
+        // In Electron, we'd need to read files via IPC
+        // For now, just show the paths
+        console.log('Selected files:', filePaths);
+      }
+    } else {
+      fileInputRef.current?.click();
     }
   };
 
@@ -213,10 +228,10 @@ export function FileTransfer({ peers, transfers, sendFile, globalSpeed }: FileTr
           <p className="text-sm text-gray-400 mb-1">
             Drag & drop files here or{' '}
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleNativeFileSelect}
               className="text-blue-400 hover:text-blue-300 font-medium"
             >
-              browse
+              {isElectron ? 'browse (native dialog)' : 'browse'}
             </button>
           </p>
           <p className="text-xs text-gray-600">Supports all file types • No size limit • 256KB optimized chunks</p>

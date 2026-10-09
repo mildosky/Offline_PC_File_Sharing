@@ -13,6 +13,7 @@ interface ConnectionPanelProps {
   applyAnswer: (answerCode: string) => Promise<boolean>;
   disconnectPeer: (peerId: string) => void;
   addDemoPeer: () => void;
+  isElectron?: boolean;
 }
 
 export function ConnectionPanel({
@@ -26,6 +27,7 @@ export function ConnectionPanel({
   applyAnswer,
   disconnectPeer,
   addDemoPeer,
+  isElectron = false,
 }: ConnectionPanelProps) {
   const [copied, setCopied] = useState(false);
   const [connectCode, setConnectCode] = useState('');

@@ -186,6 +186,100 @@ ipcMain.handle('close-window', () => {
   mainWindow.hide(); // Hide to tray instead of closing
 });
 
+// WiFi Direct IPC Handlers
+ipcMain.handle('check-wifi-direct-support', async () => {
+  const { exec } = require('child_process');
+  return new Promise((resolve) => {
+    if (process.platform === 'win32') {
+      exec('netsh wlan show drivers', (error, stdout) => {
+        if (error) {
+          resolve(false);
+        } else {
+          // Check if WiFi Direct is supported
+          resolve(stdout.includes('Hosted network supported: Yes') || 
+                  stdout.includes('Wireless Display') ||
+                  stdout.includes('WiFi Direct'));
+        }
+      });
+    } else {
+      resolve(false);
+    }
+  });
+});
+
+ipcMain.handle('scan-wifi-direct-peers', async () => {
+  // In production, this would use native WiFi Direct APIs
+  // For now, return demo data
+  return [
+    {
+      id: 'wfd-001',
+      name: 'Musah-Laptop',
+      signalStrength: 85,
+      status: 'available',
+      isGroupOwner: true,
+      frequency: '5 GHz',
+    },
+    {
+      id: 'wfd-002',
+      name: 'Ibrahim-Phone',
+      signalStrength: 72,
+      status: 'available',
+      isGroupOwner: false,
+      frequency: '2.4 GHz',
+    },
+  ];
+});
+
+ipcMain.handle('create-wifi-direct-group', async () => {
+  return {
+    name: 'NETSHARE-' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+    ip: '192.168.49.1',
+    pin: Math.floor(10000000 + Math.random() * 90000000).toString(),
+  };
+});
+
+ipcMain.handle('connect-to-wifi-direct-peer', async (event, peerId) => {
+  // In production, this would establish WiFi Direct connection
+  return true;
+});
+
+ipcMain.handle('disconnect-wifi-direct', async () => {
+  // In production, this would disconnect WiFi Direct
+  return true;
+});
+
+// NFC IPC Handlers
+ipcMain.handle('check-nfc-support', async () => {
+  const { exec } = require('child_process');
+  return new Promise((resolve) => {
+    if (process.platform === 'win32') {
+      exec('pnputil /enum-devices /class NFC', (error, stdout) => {
+        if (error) {
+          resolve(false);
+        } else {
+          resolve(stdout.includes('NFC') || stdout.includes('Near Field'));
+        }
+      });
+    } else {
+      resolve(false);
+    }
+  });
+});
+
+ipcMain.handle('start-nfc-scan', async () => {
+  // In production, this would start NFC scanning via Windows Runtime APIs
+  return true;
+});
+
+ipcMain.handle('stop-nfc-scan', async () => {
+  return true;
+});
+
+ipcMain.handle('send-ndef-message', async (event, message) => {
+  // In production, this would send NDEF message via NFC
+  return true;
+});
+
 // App lifecycle
 app.whenReady().then(() => {
   createWindow();

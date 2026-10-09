@@ -25,6 +25,10 @@ export function SettingsPanel({ isElectron }: SettingsPanelProps) {
             <p className="text-sm font-medium text-white">1.0.0</p>
           </div>
           <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-700/20">
+            <p className="text-xs text-gray-500">Author</p>
+            <p className="text-sm font-medium text-white">Musah Ibrahim</p>
+          </div>
+          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-700/20">
             <p className="text-xs text-gray-500">Mode</p>
             <p className="text-sm font-medium text-white flex items-center gap-1">
               {isElectron ? (
@@ -238,6 +242,71 @@ export function SettingsPanel({ isElectron }: SettingsPanelProps) {
             </div>
             <div className="w-10 h-5 bg-green-500 rounded-full relative cursor-pointer">
               <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* About & License */}
+      <div className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 border border-blue-500/20 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">About & License</h2>
+            <p className="text-xs text-gray-400">Author & copyright information</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                MI
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Musah Ibrahim</p>
+                <p className="text-xs text-gray-400">Author & Developer</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              NetShare is a peer-to-peer file sharing application designed for maximum speed and privacy. 
+              All transfers happen directly between devices with zero internet data usage.
+            </p>
+          </div>
+
+          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">License</p>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              © 2024 Musah Ibrahim. All rights reserved.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+              This software and its source code are the exclusive property of Musah Ibrahim. 
+              Unauthorized copying, distribution, modification, or use of this software, 
+              in whole or in part, is strictly prohibited without prior written consent from the author.
+            </p>
+          </div>
+
+          <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Connection Methods</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: '🌐', name: 'LAN (WebRTC)', speed: '100+ MB/s' },
+                { icon: '📱', name: 'Mobile QR', speed: '50-80 MB/s' },
+                { icon: '🔌', name: 'USB Direct', speed: '625 MB/s' },
+                { icon: '📡', name: 'Bluetooth', speed: '0.5 MB/s' },
+                { icon: '📶', name: 'WiFi Direct', speed: '250 MB/s' },
+                { icon: '📲', name: 'NFC + WiFi', speed: '250 MB/s' },
+              ].map((method, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 bg-gray-900/50 rounded-lg">
+                  <span>{method.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-white truncate">{method.name}</p>
+                    <p className="text-[10px] text-gray-500">{method.speed}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -7,6 +7,8 @@ import { BluetoothPanel } from './components/BluetoothPanel';
 import { QRConnectionPanel } from './components/QRConnectionPanel';
 import { MobileConnect } from './components/MobileConnect';
 import { USBConnectionPanel } from './components/USBConnectionPanel';
+import { WiFiDirectPanel } from './components/WiFiDirectPanel';
+import { NFCPanel } from './components/NFCPanel';
 import { TitleBar } from './components/TitleBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { usePeerConnection } from './hooks/usePeerConnection';
@@ -16,10 +18,11 @@ import {
   Bluetooth as BluetoothIcon, Settings, 
   Download, Monitor, Wifi, Users,
   Zap, Shield, ChevronRight, FolderOpen,
-  Activity, Bell, Info, Smartphone, QrCode, Usb
+  Activity, Bell, Info, Smartphone, QrCode, Usb,
+  Radio
 } from 'lucide-react';
 
-type Tab = 'connections' | 'transfer' | 'chat' | 'bluetooth' | 'mobile' | 'usb' | 'settings';
+type Tab = 'connections' | 'transfer' | 'chat' | 'bluetooth' | 'mobile' | 'usb' | 'wifi-direct' | 'nfc' | 'settings';
 
 // Detect if we're in mobile mode
 const isMobileMode = () => {
@@ -117,6 +120,8 @@ function App() {
     { id: 'chat' as Tab, label: 'Chat', icon: MessageSquare },
     { id: 'bluetooth' as Tab, label: 'Bluetooth', icon: BluetoothIcon },
     { id: 'usb' as Tab, label: 'USB Direct', icon: Usb },
+    { id: 'wifi-direct' as Tab, label: 'WiFi Direct', icon: Wifi },
+    { id: 'nfc' as Tab, label: 'NFC + WiFi', icon: Radio },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ];
 
@@ -300,6 +305,18 @@ function App() {
               </div>
             )}
 
+            {activeTab === 'wifi-direct' && (
+              <div className="max-w-3xl mx-auto">
+                <WiFiDirectPanel isElectron={isElectron} />
+              </div>
+            )}
+
+            {activeTab === 'nfc' && (
+              <div className="max-w-3xl mx-auto">
+                <NFCPanel isElectron={isElectron} />
+              </div>
+            )}
+
             {activeTab === 'transfer' && (
               <div className="max-w-3xl mx-auto">
                 <FileTransfer
@@ -345,6 +362,7 @@ function App() {
               Desktop Mode
             </span>
           )}
+          <span className="text-gray-600">© 2024 Musah Ibrahim. All rights reserved.</span>
         </div>
         <div className="flex items-center gap-3">
           <span>{peers.length} peer{peers.length !== 1 ? 's' : ''}</span>

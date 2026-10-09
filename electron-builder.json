@@ -1,6 +1,11 @@
 {
-  "appId": "com.netshare.app",
+  "appId": "com.musahibrahim.netshare",
   "productName": "NetShare",
+  "author": {
+    "name": "Musah Ibrahim",
+    "email": "musah.ibrahim@netshare.app"
+  },
+  "copyright": "Copyright © 2024 Musah Ibrahim. All rights reserved.",
   "directories": {
     "output": "release"
   },

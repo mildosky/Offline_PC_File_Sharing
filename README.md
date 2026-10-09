@@ -2,7 +2,10 @@
 
 **Blazing-fast peer-to-peer file sharing as a standalone Windows .exe application**
 
-![NetShare](https://img.shields.io/badge/version-1.0.0-blue) ![Electron](https://img.shields.io/badge/Electron-28.0-green) ![License](https://img.shields.io/badge/license-MIT-orange)
+**Author:** Musah Ibrahim  
+**Copyright:** © 2024 Musah Ibrahim. All rights reserved.
+
+![NetShare](https://img.shields.io/badge/version-1.0.0-blue) ![Electron](https://img.shields.io/badge/Electron-28.0-green) ![Author](https://img.shields.io/badge/author-Musah%20Ibrahim-purple) ![License](https://img.shields.io/badge/license-Proprietary-red)
 
 ---
 
@@ -13,10 +16,12 @@ NetShare is a **desktop application** (.exe) for transferring files between comp
 ### 🎯 Key Features
 
 - **⚡ Lightning Fast** - Up to 625 MB/s via USB 3.0 (fastest method!)
-- **🌐 No Internet Required** - 6 different offline connection methods
+- **🌐 No Internet Required** - 8 different offline connection methods
 - **🖥️ Standalone .exe** - Native Windows desktop application
 - **📱 Mobile QR Connect** - Scan QR code for instant phone-to-PC connection
 - **🔌 USB Direct** - Physical cable connection for maximum speed
+- **📶 WiFi Direct** - Router-less WiFi connections up to 250 MB/s (NEW!)
+- **📲 NFC + WiFi** - Tap-to-connect with instant pairing (NEW!)
 - **🔍 Auto-Discovery** - Finds other NetShare instances automatically via mDNS
 - **📡 Bluetooth Fallback** - Connect devices without WiFi/LAN
 - **🔒 100% Private** - Direct P2P transfer, no servers involved
@@ -118,6 +123,28 @@ For maximum speed without WiFi:
 
 **USB speeds:** Up to 625 MB/s (fastest method available!)
 
+### WiFi Direct Connection
+
+For router-less WiFi connections:
+
+1. Go to the **WiFi Direct** tab
+2. Click **Scan for WiFi Direct Devices** or **Create Group**
+3. Select a device or share your group info
+4. ✅ Transfer at up to 250 MB/s!
+
+**WiFi Direct speeds:** Up to 250 MB/s (no router needed!)
+
+### NFC + WiFi Direct Connection
+
+For tap-to-connect instant pairing:
+
+1. Go to the **NFC + WiFi** tab
+2. Click **Start NFC Scanning**
+3. Tap your phone to the NFC reader
+4. ✅ Instant connection + 250 MB/s transfer!
+
+**NFC speeds:** Instant connection, then 250 MB/s via WiFi Direct!
+
 See [OFFLINE_CONNECTION_METHODS.md](OFFLINE_CONNECTION_METHODS.md) for all connection options.
 
 ---
@@ -129,6 +156,8 @@ See [OFFLINE_CONNECTION_METHODS.md](OFFLINE_CONNECTION_METHODS.md) for all conne
 | Connection Method | Speed | 1GB File Time |
 |-------------------|-------|---------------|
 | **USB 3.0+ Direct** | **Up to 625 MB/s** | **~1.6 seconds** ⚡ |
+| **WiFi Direct** | **Up to 250 MB/s** | **~4 seconds** ⚡ |
+| **NFC + WiFi Direct** | **Up to 250 MB/s** | **~4 seconds** ⚡ |
 | USB 2.0 Direct | Up to 60 MB/s | ~17 seconds |
 | **Gigabit LAN (Ethernet)** | **100-120 MB/s** | **~9 seconds** |
 | WiFi 6 (6GHz) | 80-100 MB/s | ~11 seconds |
@@ -358,7 +387,16 @@ Contributions welcome! Please:
 
 ## 📄 License
 
-MIT License - feel free to use, modify, and distribute.
+**Proprietary License** - © 2024 Musah Ibrahim. All rights reserved.
+
+This software and its source code are the exclusive property of Musah Ibrahim. Unauthorized copying, distribution, modification, or use of this software, in whole or in part, is strictly prohibited without prior written consent from the author.
+
+---
+
+## 👨‍💻 Author
+
+**Musah Ibrahim**  
+Creator and sole developer of NetShare
 
 ---
 
@@ -374,12 +412,14 @@ MIT License - feel free to use, modify, and distribute.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](#)
-- **Discussions**: [GitHub Discussions](#)
+- **Author**: Musah Ibrahim
+- **Email**: musah.ibrahim@netshare.app
 - **Documentation**: [DESKTOP_BUILD_GUIDE.md](DESKTOP_BUILD_GUIDE.md)
 
 ---
 
-**Built with ❤️ using Electron, React, and WebRTC**
+**Built with ❤️ by Musah Ibrahim**
+
+**© 2024 Musah Ibrahim. All rights reserved.**
 
 **Transfer files at the speed of light. No internet required.** ⚡

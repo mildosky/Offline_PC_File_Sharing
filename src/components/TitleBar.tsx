@@ -32,6 +32,7 @@ export function TitleBar({ title = 'NetShare', isElectron = false }: TitleBarPro
           <Network className="w-2.5 h-2.5 text-white" />
         </div>
         <span className="text-xs font-medium text-gray-400">{title}</span>
+        <span className="text-xs text-gray-600">by Musah Ibrahim</span>
       </div>
 
       {/* Right: Window controls */}

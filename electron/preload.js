@@ -19,12 +19,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
   closeWindow: () => ipcRenderer.invoke('close-window'),
   
+  // WiFi Direct
+  checkWiFiDirectSupport: () => ipcRenderer.invoke('check-wifi-direct-support'),
+  scanWiFiDirectPeers: () => ipcRenderer.invoke('scan-wifi-direct-peers'),
+  createWiFiDirectGroup: () => ipcRenderer.invoke('create-wifi-direct-group'),
+  connectToWiFiDirectPeer: (peerId) => ipcRenderer.invoke('connect-to-wifi-direct-peer', peerId),
+  disconnectWiFiDirect: () => ipcRenderer.invoke('disconnect-wifi-direct'),
+  
+  // NFC
+  checkNFCSupport: () => ipcRenderer.invoke('check-nfc-support'),
+  startNFCScan: () => ipcRenderer.invoke('start-nfc-scan'),
+  stopNFCScan: () => ipcRenderer.invoke('stop-nfc-scan'),
+  sendNDEFMessage: (message) => ipcRenderer.invoke('send-ndef-message', message),
+  
   // Event listeners
   onPeerDiscovered: (callback) => {
     ipcRenderer.on('peer-discovered', (event, data) => callback(data));
   },
   onTrayAction: (callback) => {
     ipcRenderer.on('tray-action', (event, action) => callback(action));
+  },
+  onNFCDeviceDetected: (callback) => {
+    ipcRenderer.on('nfc-device-detected', (event, device) => callback(device));
   },
   
   // Platform info

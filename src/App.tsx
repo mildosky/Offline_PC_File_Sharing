@@ -6,6 +6,7 @@ import { NetworkStatus } from './components/NetworkStatus';
 import { BluetoothPanel } from './components/BluetoothPanel';
 import { QRConnectionPanel } from './components/QRConnectionPanel';
 import { MobileConnect } from './components/MobileConnect';
+import { USBConnectionPanel } from './components/USBConnectionPanel';
 import { TitleBar } from './components/TitleBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { usePeerConnection } from './hooks/usePeerConnection';
@@ -15,10 +16,10 @@ import {
   Bluetooth as BluetoothIcon, Settings, 
   Download, Monitor, Wifi, Users,
   Zap, Shield, ChevronRight, FolderOpen,
-  Activity, Bell, Info, Smartphone, QrCode
+  Activity, Bell, Info, Smartphone, QrCode, Usb
 } from 'lucide-react';
 
-type Tab = 'connections' | 'transfer' | 'chat' | 'bluetooth' | 'mobile' | 'settings';
+type Tab = 'connections' | 'transfer' | 'chat' | 'bluetooth' | 'mobile' | 'usb' | 'settings';
 
 // Detect if we're in mobile mode
 const isMobileMode = () => {
@@ -115,6 +116,7 @@ function App() {
     { id: 'transfer' as Tab, label: 'File Transfer', icon: HardDrive, badge: activeTransfers.length || undefined },
     { id: 'chat' as Tab, label: 'Chat', icon: MessageSquare },
     { id: 'bluetooth' as Tab, label: 'Bluetooth', icon: BluetoothIcon },
+    { id: 'usb' as Tab, label: 'USB Direct', icon: Usb },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ];
 
@@ -289,6 +291,12 @@ function App() {
                   removePeer={removeBluetoothPeer}
                   setError={setBluetoothError}
                 />
+              </div>
+            )}
+
+            {activeTab === 'usb' && (
+              <div className="max-w-3xl mx-auto">
+                <USBConnectionPanel />
               </div>
             )}
 

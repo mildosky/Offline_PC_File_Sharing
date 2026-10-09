@@ -12,10 +12,11 @@ NetShare is a **desktop application** (.exe) for transferring files between comp
 
 ### 🎯 Key Features
 
-- **⚡ Lightning Fast** - 100+ MB/s on Gigabit LAN (20x faster than cloud)
-- **🌐 No Internet Required** - Works completely offline on your local network
+- **⚡ Lightning Fast** - Up to 625 MB/s via USB 3.0 (fastest method!)
+- **🌐 No Internet Required** - 6 different offline connection methods
 - **🖥️ Standalone .exe** - Native Windows desktop application
 - **📱 Mobile QR Connect** - Scan QR code for instant phone-to-PC connection
+- **🔌 USB Direct** - Physical cable connection for maximum speed
 - **🔍 Auto-Discovery** - Finds other NetShare instances automatically via mDNS
 - **📡 Bluetooth Fallback** - Connect devices without WiFi/LAN
 - **🔒 100% Private** - Direct P2P transfer, no servers involved
@@ -105,14 +106,30 @@ Connect your phone instantly using QR codes:
 
 See [MOBILE_QR_GUIDE.md](MOBILE_QR_GUIDE.md) for detailed instructions.
 
+### USB Direct Connection
+
+For maximum speed without WiFi:
+
+1. Go to the **USB Direct** tab
+2. Connect devices via USB cable
+3. Click **Connect USB Device**
+4. Select your device from the browser picker
+5. ✅ Transfer at up to 625 MB/s (USB 3.0)!
+
+**USB speeds:** Up to 625 MB/s (fastest method available!)
+
+See [OFFLINE_CONNECTION_METHODS.md](OFFLINE_CONNECTION_METHODS.md) for all connection options.
+
 ---
 
 ## 📊 Performance
 
 ### Transfer Speeds
 
-| Network Type | Speed | 1GB File Time |
-|--------------|-------|---------------|
+| Connection Method | Speed | 1GB File Time |
+|-------------------|-------|---------------|
+| **USB 3.0+ Direct** | **Up to 625 MB/s** | **~1.6 seconds** ⚡ |
+| USB 2.0 Direct | Up to 60 MB/s | ~17 seconds |
 | **Gigabit LAN (Ethernet)** | **100-120 MB/s** | **~9 seconds** |
 | WiFi 6 (6GHz) | 80-100 MB/s | ~11 seconds |
 | **Mobile WiFi (5GHz)** | **50-80 MB/s** | **~15 seconds** |

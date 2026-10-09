@@ -3,14 +3,17 @@ import { ConnectionPanel } from './components/ConnectionPanel';
 import { FileTransfer } from './components/FileTransfer';
 import { ChatPanel } from './components/ChatPanel';
 import { NetworkStatus } from './components/NetworkStatus';
+import { BluetoothPanel } from './components/BluetoothPanel';
 import { usePeerConnection } from './hooks/usePeerConnection';
+import { useBluetooth } from './hooks/useBluetooth';
 import { 
   Globe, Shield, Zap, Monitor, 
   ArrowRight, Network, Lock, 
-  Radio, HardDrive, Users, Gauge
+  Radio, HardDrive, Users, Gauge,
+  Bluetooth as BluetoothIcon
 } from 'lucide-react';
 
-type Tab = 'transfer' | 'chat' | 'connections';
+type Tab = 'transfer' | 'chat' | 'connections' | 'bluetooth';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('connections');
@@ -34,6 +37,19 @@ function App() {
     disconnectPeer,
     addDemoPeer,
   } = usePeerConnection();
+
+  const {
+    peers: bluetoothPeers,
+    isScanning,
+    isSupported: bluetoothSupported,
+    isSecureContext,
+    error: bluetoothError,
+    scanForDevices,
+    connectToDevice: connectBluetoothDevice,
+    disconnectDevice: disconnectBluetoothDevice,
+    removePeer: removeBluetoothPeer,
+    setError: setBluetoothError,
+  } = useBluetooth();
 
   if (showLanding) {
     return <LandingPage onGetStarted={() => setShowLanding(false)} />;
@@ -88,6 +104,7 @@ function App() {
           <div className="flex gap-1 py-2">
             {[
               { id: 'connections' as Tab, label: 'Connections', icon: Network },
+              { id: 'bluetooth' as Tab, label: 'Bluetooth', icon: BluetoothIcon },
               { id: 'transfer' as Tab, label: 'File Transfer', icon: HardDrive },
               { id: 'chat' as Tab, label: 'Chat', icon: Radio },
             ].map(tab => (
@@ -210,6 +227,23 @@ function App() {
           </div>
         )}
 
+        {activeTab === 'bluetooth' && (
+          <div className="max-w-2xl mx-auto">
+            <BluetoothPanel
+              peers={bluetoothPeers}
+              isScanning={isScanning}
+              isSupported={bluetoothSupported}
+              isSecureContext={isSecureContext}
+              error={bluetoothError}
+              scanForDevices={scanForDevices}
+              connectToDevice={connectBluetoothDevice}
+              disconnectDevice={disconnectBluetoothDevice}
+              removePeer={removeBluetoothPeer}
+              setError={setBluetoothError}
+            />
+          </div>
+        )}
+
         {activeTab === 'chat' && (
           <div className="max-w-2xl mx-auto">
             <ChatPanel
@@ -232,6 +266,9 @@ function App() {
               </span>
               <span className="flex items-center gap-1">
                 <Zap className="w-3 h-3" /> No internet required
+              </span>
+              <span className="flex items-center gap-1">
+                <BluetoothIcon className="w-3 h-3" /> Bluetooth fallback
               </span>
               <span className="flex items-center gap-1">
                 <Shield className="w-3 h-3" /> P2P direct transfer
@@ -488,7 +525,7 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             {
               icon: Zap,
@@ -514,6 +551,12 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
               title: 'Multi-PC Support',
               description: 'Connect multiple computers simultaneously. Share files between any combination of devices in your network at full speed.',
               gradient: 'from-purple-500 to-pink-500',
+            },
+            {
+              icon: BluetoothIcon,
+              title: 'Bluetooth Fallback',
+              description: 'Not on the same network? Use Bluetooth Low Energy to connect devices when WiFi isn\'t available. Perfect for quick small file transfers.',
+              gradient: 'from-sky-500 to-blue-500',
             },
             {
               icon: Lock,

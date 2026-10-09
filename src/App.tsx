@@ -62,6 +62,7 @@ function App() {
     sendChatMessage,
     disconnectPeer,
     addDemoPeer,
+    addExternalPeer,
   } = usePeerConnection();
 
   const {
@@ -307,13 +308,19 @@ function App() {
 
             {activeTab === 'wifi-direct' && (
               <div className="max-w-3xl mx-auto">
-                <WiFiDirectPanel isElectron={isElectron} />
+                <WiFiDirectPanel 
+                  isElectron={isElectron} 
+                  onPeerConnected={(peer) => addExternalPeer(peer.id, peer.name)}
+                />
               </div>
             )}
 
             {activeTab === 'nfc' && (
               <div className="max-w-3xl mx-auto">
-                <NFCPanel isElectron={isElectron} />
+                <NFCPanel 
+                  isElectron={isElectron} 
+                  onPeerConnected={(peer) => addExternalPeer(peer.id, peer.name)}
+                />
               </div>
             )}
 

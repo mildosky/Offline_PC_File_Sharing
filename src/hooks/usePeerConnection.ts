@@ -572,6 +572,26 @@ export function usePeerConnection() {
     }, 1500);
   }, [peers.length, startSpeedTracking, stopSpeedTracking]);
 
+  // Add external peer (from WiFi Direct, NFC, etc.)
+  const addExternalPeer = useCallback((peerId: string, peerName: string) => {
+    setPeers(prev => {
+      // Check if peer already exists
+      const exists = prev.find(p => p.id === peerId);
+      if (exists) {
+        // Update status to connected
+        return prev.map(p => p.id === peerId ? { ...p, status: 'connected' as const, lastSeen: new Date() } : p);
+      }
+      // Add new peer
+      return [...prev, {
+        id: peerId,
+        name: peerName,
+        status: 'connected' as const,
+        avatar: peerName.charAt(0).toUpperCase(),
+        lastSeen: new Date()
+      }];
+    });
+  }, []);
+
   return {
     peers,
     transfers,
@@ -589,6 +609,7 @@ export function usePeerConnection() {
     sendChatMessage,
     disconnectPeer,
     addDemoPeer,
+    addExternalPeer,
     setTransfers,
   };
 }

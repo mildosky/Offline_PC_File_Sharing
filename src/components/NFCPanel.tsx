@@ -3,6 +3,7 @@ import { Smartphone, Radio, CheckCircle, XCircle, Loader, Zap, AlertTriangle, Wi
 
 interface NFCPanelProps {
   isElectron?: boolean;
+  onPeerConnected?: (peer: { id: string; name: string; status: 'connected' }) => void;
 }
 
 interface NFCDevice {
@@ -13,7 +14,7 @@ interface NFCDevice {
   transferProgress?: number;
 }
 
-export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false }) => {
+export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false, onPeerConnected }) => {
   const [isSupported, setIsSupported] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [detectedDevices, setDetectedDevices] = useState<NFCDevice[]>([]);
@@ -57,11 +58,10 @@ export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false }) => {
           });
         });
       } else {
-        // Demo mode - show warning
+        // Demo mode - show warning and demo devices immediately
         setError('🎭 DEMO MODE: These are fake devices. NFC only works in the desktop app (.exe). Build and run the .exe to use real NFC connections.');
         
-        // Still show demo data for UI preview
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Show demo data immediately for better UX
         setDetectedDevices([
           {
             id: 'nfc-001',
@@ -116,6 +116,15 @@ export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false }) => {
 
       setConnectedDevice({ ...device, status: 'connected' });
       setDetectedDevices(prev => prev.map(d => d.id === device.id ? { ...d, status: 'connected' as const } : d));
+      
+      // Notify parent component about the connected peer
+      if (onPeerConnected) {
+        onPeerConnected({
+          id: device.id,
+          name: device.name,
+          status: 'connected'
+        });
+      }
     } catch (err: any) {
       setError(`Connection failed: ${err.message}`);
       setDetectedDevices(prev => prev.map(d => d.id === device.id ? { ...d, status: 'detected' as const } : d));
@@ -138,12 +147,23 @@ export const NFCPanel: React.FC<NFCPanelProps> = ({ isElectron = false }) => {
       // In real implementation, this would validate the code and establish connection
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      setConnectedDevice({
+      const newDevice: NFCDevice = {
         id: 'manual-' + Date.now(),
         name: 'Manual Device',
         type: 'unknown',
         status: 'connected',
-      });
+      };
+      
+      setConnectedDevice(newDevice);
+      
+      // Notify parent component about the connected peer
+      if (onPeerConnected) {
+        onPeerConnected({
+          id: newDevice.id,
+          name: newDevice.name,
+          status: 'connected'
+        });
+      }
     } catch (err: any) {
       setError(`Manual connection failed: ${err.message}`);
     }

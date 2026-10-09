@@ -3,6 +3,7 @@ import { Wifi, Radio, Signal, SignalHigh, SignalLow, Users, CheckCircle, XCircle
 
 interface WiFiDirectPanelProps {
   isElectron?: boolean;
+  onPeerConnected?: (peer: { id: string; name: string; status: 'connected' }) => void;
 }
 
 interface WiFiDirectPeer {
@@ -15,7 +16,7 @@ interface WiFiDirectPeer {
   frequency?: string;
 }
 
-export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = false }) => {
+export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = false, onPeerConnected }) => {
   const [isSupported, setIsSupported] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [peers, setPeers] = useState<WiFiDirectPeer[]>([]);
@@ -131,6 +132,15 @@ export const WiFiDirectPanel: React.FC<WiFiDirectPanelProps> = ({ isElectron = f
 
       setConnectedPeer({ ...peer, status: 'connected', ipAddress: '192.168.49.' + Math.floor(Math.random() * 254 + 2) });
       setPeers(prev => prev.map(p => p.id === peer.id ? { ...p, status: 'connected' as const } : p));
+      
+      // Notify parent component about the connected peer
+      if (onPeerConnected) {
+        onPeerConnected({
+          id: peer.id,
+          name: peer.name,
+          status: 'connected'
+        });
+      }
     } catch (err: any) {
       setError(`Connection failed: ${err.message}`);
       setPeers(prev => prev.map(p => p.id === peer.id ? { ...p, status: 'available' as const } : p));

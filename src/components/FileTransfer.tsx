@@ -77,15 +77,33 @@ export function FileTransfer({ peers, transfers, sendFile, globalSpeed, isElectr
   };
 
   const handleSend = async () => {
-    if (!selectedPeer || selectedFiles.length === 0) return;
-    setSending(true);
-    
-    for (const file of selectedFiles) {
-      await sendFile(file, selectedPeer);
+    if (!selectedPeer || selectedFiles.length === 0) {
+      console.warn('Cannot send: No peer selected or no files selected');
+      return;
     }
     
-    setSelectedFiles([]);
-    setSending(false);
+    console.log('Starting file transfer:', {
+      peerId: selectedPeer,
+      fileCount: selectedFiles.length,
+      files: selectedFiles.map(f => ({ name: f.name, size: f.size }))
+    });
+    
+    setSending(true);
+    
+    try {
+      for (const file of selectedFiles) {
+        console.log('Sending file:', file.name);
+        await sendFile(file, selectedPeer);
+        console.log('File sent successfully:', file.name);
+      }
+      
+      setSelectedFiles([]);
+      console.log('All files sent successfully');
+    } catch (err) {
+      console.error('Error sending files:', err);
+    } finally {
+      setSending(false);
+    }
   };
 
   const getStatusIcon = (status: FileTransferItem['status']) => {
@@ -270,6 +288,14 @@ export function FileTransfer({ peers, transfers, sendFile, globalSpeed, isElectr
                 </div>
               ))}
             </div>
+            
+            {!selectedPeer && (
+              <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-xs text-yellow-300 text-center">
+                  ⚠️ Please select a recipient device above before sending files
+                </p>
+              </div>
+            )}
             
             <button
               onClick={handleSend}

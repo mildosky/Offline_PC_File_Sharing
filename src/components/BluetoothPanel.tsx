@@ -120,23 +120,33 @@ export function BluetoothPanel({
 
       {/* Scan Button */}
       {isSupported && isSecureContext && (
-        <button
-          onClick={scanForDevices}
-          disabled={isScanning}
-          className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-500 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg shadow-indigo-500/20 disabled:shadow-none flex items-center justify-center gap-2"
-        >
-          {isScanning ? (
-            <>
-              <Search className="w-4 h-4 animate-spin" />
-              Scanning for Devices...
-            </>
-          ) : (
-            <>
-              <Radio className="w-4 h-4" />
-              Scan for Bluetooth Devices
-            </>
+        <div className="space-y-2">
+          <button
+            onClick={scanForDevices}
+            disabled={isScanning}
+            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 disabled:from-gray-700 disabled:to-gray-700 disabled:text-gray-500 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg shadow-indigo-500/20 disabled:shadow-none flex items-center justify-center gap-2"
+          >
+            {isScanning ? (
+              <>
+                <Search className="w-4 h-4 animate-spin" />
+                Opening Device Picker...
+              </>
+            ) : (
+              <>
+                <Radio className="w-4 h-4" />
+                Scan for Bluetooth Devices
+              </>
+            )}
+          </button>
+          
+          {isScanning && (
+            <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-3">
+              <p className="text-xs text-indigo-300 text-center">
+                📱 A device picker dialog should appear. Select a Bluetooth device to connect.
+              </p>
+            </div>
           )}
-        </button>
+        </div>
       )}
 
       {/* Error Display */}

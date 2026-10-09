@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Smartphone, QrCode, Camera, CheckCircle, XCircle, Loader, Wifi, ArrowRight } from 'lucide-react';
 import { usePeerConnection } from '../hooks/usePeerConnection';
+import { getMobileConnectionURL } from '../utils/networkUtils';
 
 interface QRConnectionPanelProps {
   peerConnection: {
@@ -30,6 +31,7 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string>('');
   const [selectedPeer, setSelectedPeer] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-scanner-container';
@@ -38,21 +40,21 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
   const handleGenerateQR = async () => {
     try {
       setError('');
+      setIsGenerating(true);
+      
+      // Generate WebRTC offer
       const offer = await generateConnectionCode();
       
-      // Get local IP address for the URL
-      const localIP = window.location.hostname || 'localhost';
-      const port = window.location.port || '3000';
-      
-      // Create URL with offer data
-      // For PWA: use HTTP URL that opens mobile interface
-      const mobileUrl = `http://${localIP}:${port}/mobile#offer=${encodeURIComponent(offer)}`;
+      // Get mobile connection URL with auto-detected IP
+      const mobileUrl = await getMobileConnectionURL(offer);
       
       setOfferCode(mobileUrl);
       setMode('showing-offer');
     } catch (err) {
       setError('Failed to generate connection code');
       console.error(err);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -157,10 +159,20 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
 
           <button
             onClick={handleGenerateQR}
-            className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+            disabled={isGenerating}
+            className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
           >
-            <QrCode className="w-5 h-5" />
-            Generate QR Code
+            {isGenerating ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                Detecting IP & Generating...
+              </>
+            ) : (
+              <>
+                <QrCode className="w-5 h-5" />
+                Generate QR Code
+              </>
+            )}
           </button>
 
           {error && (
@@ -188,8 +200,11 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
           </div>
 
           <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
-            <p className="text-sm text-blue-300 text-center">
+            <p className="text-sm text-blue-300 text-center mb-2">
               👆 Show this QR code to your phone
+            </p>
+            <p className="text-xs text-blue-400 text-center font-mono break-all">
+              {offerCode}
             </p>
           </div>
 

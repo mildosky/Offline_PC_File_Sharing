@@ -30,13 +30,15 @@ export function useBluetooth() {
   }, []);
 
   const scanForDevices = useCallback(async () => {
+    // Check if Web Bluetooth is supported
     if (!navigator.bluetooth) {
-      setError('Bluetooth is not supported in this browser. Use Chrome or Edge on desktop, or Chrome on Android.');
+      setError('❌ Bluetooth is not supported in this browser. Please use Chrome, Edge, or Opera.');
       return;
     }
 
+    // Check if we're in a secure context
     if (!window.isSecureContext) {
-      setError('Bluetooth requires HTTPS. Please serve this page over HTTPS or localhost.');
+      setError('❌ Bluetooth requires a secure context. Please run the app via "npm run dev" (localhost) or use HTTPS.');
       return;
     }
 
@@ -44,13 +46,18 @@ export function useBluetooth() {
     setError(null);
 
     try {
-      // Request Bluetooth device - this shows the browser's device picker
+      // Request Bluetooth device - this shows the browser's native device picker
+      // The user must select a device from the dialog
+      console.log('Opening Bluetooth device picker...');
+      
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [NETSHARE_SERVICE_UUID],
       });
 
       if (device) {
+        console.log('Device selected:', device.name);
+        
         const newPeer: BluetoothPeer = {
           id: device.id,
           name: device.name || 'Unknown Device',
@@ -65,15 +72,24 @@ export function useBluetooth() {
           }
           return [...prev, newPeer];
         });
+
+        // Store the device reference for later connection
+        connectedDevices.current.set(device.id, device);
       }
     } catch (err: any) {
+      console.error('Bluetooth scan error:', err);
+      
       if (err.name === 'NotFoundError' || err.name === 'AbortError') {
         // User cancelled the dialog - not an error
         setError(null);
       } else if (err.name === 'SecurityError') {
-        setError('Bluetooth requires a secure context (HTTPS).');
+        setError('❌ Bluetooth requires a secure context (HTTPS or localhost). Please run via "npm run dev".');
+      } else if (err.name === 'NotSupportedError') {
+        setError('❌ Bluetooth operation not supported. Make sure Bluetooth is enabled on your device.');
+      } else if (err.name === 'InvalidStateError') {
+        setError('❌ Bluetooth adapter is not available. Please check your Bluetooth settings.');
       } else {
-        setError(`Bluetooth scan failed: ${err.message}`);
+        setError(`❌ Bluetooth scan failed: ${err.message || 'Unknown error'}`);
       }
     } finally {
       setIsScanning(false);
@@ -84,8 +100,6 @@ export function useBluetooth() {
     const peer = peers.find(p => p.id === peerId);
     if (!peer) return;
 
-    // We need to re-request the device since we can't store BluetoothDevice objects
-    // In a real app, you'd maintain a device cache
     setError(null);
 
     setPeers(prev => prev.map(p => 
@@ -93,33 +107,43 @@ export function useBluetooth() {
     ));
 
     try {
-      if (!navigator.bluetooth) {
-        throw new Error('Bluetooth not available');
+      // Get the stored device reference
+      let device = connectedDevices.current.get(peerId);
+      
+      // If we don't have a reference, request it again
+      if (!device) {
+        if (!navigator.bluetooth) {
+          throw new Error('Bluetooth not available');
+        }
+        
+        device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [NETSHARE_SERVICE_UUID],
+        });
+        
+        connectedDevices.current.set(peerId, device);
       }
-      // Re-request the device to get a fresh reference
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [NETSHARE_SERVICE_UUID],
-      });
 
       if (!device.gatt) {
         throw new Error('GATT not supported by this device');
       }
 
       // Connect to GATT server
+      console.log('Connecting to GATT server...');
       const server = await device.gatt.connect();
+      console.log('GATT server connected');
       
       // Try to discover our NetShare service
       let isNetShareDevice = false;
       try {
         const service = await server.getPrimaryService(NETSHARE_SERVICE_UUID);
         isNetShareDevice = true;
+        console.log('NetShare service found');
       } catch {
         // Not a NetShare device - that's okay for demo
+        console.log('NetShare service not found (this is normal for generic devices)');
         isNetShareDevice = false;
       }
-
-      connectedDevices.current.set(peerId, device);
 
       setPeers(prev => prev.map(p => 
         p.id === peerId ? { ...p, status: 'connected' } : p
@@ -127,6 +151,7 @@ export function useBluetooth() {
 
       // Listen for disconnection
       device.addEventListener('gattserverdisconnected', () => {
+        console.log('Device disconnected');
         setPeers(prev => prev.map(p => 
           p.id === peerId ? { ...p, status: 'disconnected' } : p
         ));
@@ -134,7 +159,8 @@ export function useBluetooth() {
       });
 
     } catch (err: any) {
-      setError(`Connection failed: ${err.message}`);
+      console.error('Connection error:', err);
+      setError(`❌ Connection failed: ${err.message}`);
       setPeers(prev => prev.map(p => 
         p.id === peerId ? { ...p, status: 'discovered' } : p
       ));

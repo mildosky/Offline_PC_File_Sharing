@@ -69,16 +69,12 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
 
   // Start scanning for phone's answer QR
   const handleStartScanning = async () => {
-    try {
-      setError('');
-      setScanning(true);
-      setMode('scanning-answer');
-
+    const startCamera = async (facingMode: string = 'environment') => {
       const html5QrCode = new Html5Qrcode(scannerContainerId);
       qrScannerRef.current = html5QrCode;
 
       await html5QrCode.start(
-        { facingMode: 'environment' },
+        { facingMode },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
@@ -99,21 +95,69 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
           // Scan error (ignore, keeps scanning)
         }
       );
+    };
+
+    try {
+      setError('');
+      setScanning(true);
+      setMode('scanning-answer');
+
+      // Try with rear camera first
+      await startCamera('environment');
     } catch (err: any) {
-      console.error('Camera error:', err);
-      setScanning(false);
+      console.error('Camera error with rear camera:', err);
       
-      // Provide specific error messages based on error type
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Camera access denied. Please allow camera permission in Windows Settings > Privacy > Camera, then restart the app.');
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setError('No camera found. Please connect a camera and try again.');
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        setError('Camera is already in use by another application. Please close other apps using the camera.');
-      } else if (err.name === 'OverconstrainedError') {
-        setError('Camera configuration not supported. Please try a different camera.');
-      } else {
-        setError(`Camera error: ${err.message || 'Unknown error'}. Please check camera permissions in Windows Settings.`);
+      // Try with front camera as fallback
+      try {
+        console.log('Trying front camera...');
+        await startCamera('user');
+      } catch (err2: any) {
+        console.error('Camera error with front camera:', err2);
+        
+        // Try without specifying facing mode
+        try {
+          console.log('Trying default camera...');
+          const html5QrCode = new Html5Qrcode(scannerContainerId);
+          qrScannerRef.current = html5QrCode;
+          await html5QrCode.start(
+            { deviceId: { exact: '' } }, // Try default device
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            async (decodedText) => {
+              try {
+                await applyAnswer(decodedText);
+                setMode('connected');
+                setScanning(false);
+                await html5QrCode.stop();
+              } catch (err) {
+                setError('Invalid QR code. Please try again.');
+              }
+            },
+            () => {}
+          );
+        } catch (err3: any) {
+          console.error('All camera attempts failed:', {
+            error1: err,
+            error2: err2,
+            error3: err3
+          });
+          
+          setScanning(false);
+          
+          // Provide detailed error information
+          const errorName = err.name || err2.name || err3.name || '';
+          const errorMessage = err.message || err2.message || err3.message || '';
+          
+          if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError' || 
+              errorMessage.includes('Permission') || errorMessage.includes('denied')) {
+            setError('Camera access denied. Please check Windows Settings > Privacy > Camera and ensure "Desktop apps" can access the camera. Then restart the app.');
+          } else if (errorName === 'NotFoundError' || errorMessage.includes('not found')) {
+            setError('No camera found. Please connect a camera and restart the app.');
+          } else if (errorName === 'NotReadableError' || errorMessage.includes('in use')) {
+            setError('Camera is in use by another app. Close other apps using the camera and try again.');
+          } else {
+            setError(`Camera error: ${errorMessage || 'Unknown error'}. Check Windows Settings > Privacy > Camera. Error: ${errorName || 'none'}`);
+          }
+        }
       }
     }
   };

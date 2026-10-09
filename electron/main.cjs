@@ -475,19 +475,28 @@ app.whenReady().then(() => {
     
     // Allow camera, microphone, and bluetooth access
     windowSession.setPermissionRequestHandler((webContents, permission, callback) => {
-      console.log('Permission requested:', permission);
+      console.log('[Permission] Request:', permission, 'from:', webContents.getURL());
       if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
+        console.log('[Permission] Granting:', permission);
         callback(true);
       } else {
+        console.log('[Permission] Denying:', permission);
         callback(false);
       }
     });
     
-    windowSession.setPermissionCheckHandler((webContents, permission) => {
+    windowSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+      console.log('[Permission] Check:', permission, 'from:', requestingOrigin);
       if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
         return true;
       }
       return false;
+    });
+    
+    // Handle device permission requests
+    windowSession.setDevicePermissionHandler((details) => {
+      console.log('[Permission] Device request:', details.deviceType, 'from:', details.origin);
+      return true; // Allow all devices
     });
   }
   

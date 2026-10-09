@@ -92,5 +92,6 @@ export async function getMobileConnectionURL(offerCode: string): Promise<string>
   const port = window.location.port || '3000';
   const encodedOffer = encodeURIComponent(offerCode);
   
-  return `http://${ip}:${port}/mobile#offer=${encodedOffer}`;
+  // Use hash-based routing for compatibility with file:// protocol
+  return `http://${ip}:${port}/#/mobile?offer=${encodedOffer}`;
 }

@@ -45,7 +45,7 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       // Generate WebRTC offer
       const offer = await generateConnectionCode();
       
-      // Get mobile connection URL with auto-detected IP
+      // Get mobile connection URL with auto-detected IP (hash-based routing)
       const mobileUrl = await getMobileConnectionURL(offer);
       
       setOfferCode(mobileUrl);

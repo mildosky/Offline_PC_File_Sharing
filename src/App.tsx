@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConnectionPanel } from './components/ConnectionPanel';
 import { FileTransfer } from './components/FileTransfer';
 import { ChatPanel } from './components/ChatPanel';
+import { NetworkStatus } from './components/NetworkStatus';
 import { usePeerConnection } from './hooks/usePeerConnection';
 import { 
   Globe, Shield, Zap, Monitor, 
@@ -112,7 +113,12 @@ function App() {
       {/* Main Content */}
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'connections' && (
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <NetworkStatus
+              isListening={isListening}
+              peerCount={peers.filter(p => p.status === 'connected').length}
+              activeTransfers={transfers.filter(t => t.status === 'sending' || t.status === 'receiving').length}
+            />
             <ConnectionPanel
               myPeerName={myPeerName}
               setMyPeerName={setMyPeerName}

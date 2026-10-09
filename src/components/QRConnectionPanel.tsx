@@ -80,22 +80,26 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       await html5QrCode.start(
         { facingMode },
         {
-          fps: 15, // Increased from 10 for faster detection
+          fps: 25, // Higher FPS for faster detection
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-            // Make QR box larger for better detection (80% of viewfinder)
+            // Make QR box much larger - 90% of viewfinder for better detection
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const qrBoxSize = Math.floor(minEdge * 0.8);
+            const qrBoxSize = Math.floor(minEdge * 0.9);
+            console.log('[QR Scanner] Viewfinder size:', viewfinderWidth, 'x', viewfinderHeight, 'QR box:', qrBoxSize);
             return {
               width: qrBoxSize,
               height: qrBoxSize,
             };
           },
-          aspectRatio: 1.0,
+          // Don't force aspect ratio - let camera use natural aspect
         },
         async (decodedText, decodedResult) => {
           // Phone's answer scanned successfully
-          console.log('[QR Scanner] QR code detected:', decodedText.substring(0, 50) + '...');
-          console.log('[QR Scanner] Full result:', decodedResult);
+          console.log('[QR Scanner] ✅ QR code detected!');
+          console.log('[QR Scanner] Decoded text:', decodedText.substring(0, 100) + '...');
+          if (decodedResult?.result?.format) {
+            console.log('[QR Scanner] Result type:', decodedResult.result.format.formatName);
+          }
           
           try {
             const success = await applyAnswer(decodedText);
@@ -104,26 +108,26 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
               setMode('connected');
               setScanning(false);
               await html5QrCode.stop();
-              console.log('[QR Scanner] Connection established successfully');
+              console.log('[QR Scanner] ✅ Connection established successfully');
             } else {
-              console.error('[QR Scanner] applyAnswer returned false - invalid answer code');
+              console.error('[QR Scanner] ❌ applyAnswer returned false - invalid answer code');
               setError('Invalid QR code. This is not a valid NetShare answer code.');
             }
           } catch (err) {
-            console.error('[QR Scanner] Failed to apply answer:', err);
+            console.error('[QR Scanner] ❌ Failed to apply answer:', err);
             setError('Invalid QR code. Please try again.');
           }
         },
         (errorMessage) => {
           // Scan error (ignore, keeps scanning)
-          // Log occasionally to show scanner is working
-          if (Math.random() < 0.01) { // Log ~1% of frames
-            console.log('[QR Scanner] Scanning frame...', errorMessage);
+          // Log more frequently to show scanner is actively working
+          if (Math.random() < 0.05) { // Log ~5% of frames for better visibility
+            console.log('[QR Scanner] 🔍 Scanning...', errorMessage || 'no QR in frame');
           }
         }
       );
       
-      console.log('[QR Scanner] Camera started successfully');
+      console.log('[QR Scanner] ✅ Camera started successfully - actively scanning for QR codes');
     };
 
     try {
@@ -416,7 +420,8 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
             
             <div
               id={scannerContainerId}
-              className="w-full aspect-square bg-black rounded-lg overflow-hidden relative"
+              className="w-full aspect-video bg-black rounded-lg overflow-hidden relative"
+              style={{ minHeight: '400px' }}
             >
               {/* Scanning overlay */}
               <div className="absolute inset-0 border-2 border-green-500/50 rounded-lg pointer-events-none">
@@ -428,12 +433,21 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
             </div>
 
             <div className="mt-4 space-y-2">
-              <p className="text-xs text-gray-400 text-center">
+              <p className="text-sm text-gray-300 text-center font-medium">
                 📱 Hold your phone's QR code in front of the camera
               </p>
-              <p className="text-xs text-gray-500 text-center">
-                💡 Tip: Ensure good lighting and hold steady
-              </p>
+              <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-blue-300 text-center mb-2">
+                  💡 Tips for better scanning:
+                </p>
+                <ul className="text-xs text-blue-400/80 space-y-1">
+                  <li>• Increase phone screen brightness to maximum</li>
+                  <li>• Hold phone 15-30cm from camera</li>
+                  <li>• Keep QR code centered in the scanning area</li>
+                  <li>• Ensure good lighting on the QR code</li>
+                  <li>• Hold steady for a few seconds</li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -469,12 +483,28 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
             )}
           </div>
 
-          <button
-            onClick={handleStopScanning}
-            className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-all"
-          >
-            Cancel Scanning
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                // Restart scanner
+                if (qrScannerRef.current) {
+                  qrScannerRef.current.stop().then(() => {
+                    qrScannerRef.current = null;
+                    handleStartScanning();
+                  });
+                }
+              }}
+              className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-all"
+            >
+              🔄 Restart Scanner
+            </button>
+            <button
+              onClick={handleStopScanning}
+              className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
 
           {error && (
             <div className="bg-red-900/20 border border-red-800 rounded-lg p-3 flex items-center gap-2">

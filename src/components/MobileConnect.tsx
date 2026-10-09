@@ -224,13 +224,19 @@ export const MobileConnect: React.FC<MobileConnectProps> = ({ offerCode: initial
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg p-6 flex justify-center">
+              <div className="bg-white rounded-lg p-4 flex justify-center" style={{ filter: 'brightness(1.3) contrast(1.2)' }}>
                 <QRCodeSVG
                   value={answerCode}
-                  size={280}
-                  level="M"
+                  size={320}
+                  level="H"
                   includeMargin={true}
                 />
+              </div>
+              
+              <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-blue-300 text-center">
+                  💡 Tip: Increase phone brightness for better scanning
+                </p>
               </div>
 
               <div className="bg-green-900/20 border border-green-800 rounded-lg p-3 text-center">

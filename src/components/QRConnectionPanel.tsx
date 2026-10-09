@@ -40,11 +40,15 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       setError('');
       const offer = await generateConnectionCode();
       
-      // Create a deep link URL using the netshare:// protocol
-      // When scanned, this will open the NetShare app directly
-      const qrUrl = `netshare://connect?offer=${encodeURIComponent(offer)}`;
+      // Get local IP address for the URL
+      const localIP = window.location.hostname || 'localhost';
+      const port = window.location.port || '3000';
       
-      setOfferCode(qrUrl);
+      // Create URL with offer data
+      // For PWA: use HTTP URL that opens mobile interface
+      const mobileUrl = `http://${localIP}:${port}/mobile#offer=${encodeURIComponent(offer)}`;
+      
+      setOfferCode(mobileUrl);
       setMode('showing-offer');
     } catch (err) {
       setError('Failed to generate connection code');

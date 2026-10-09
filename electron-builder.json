@@ -25,7 +25,6 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "public/icon.ico",
     "artifactName": "${productName}-${version}-Setup.${ext}"
   },
   "nsis": {

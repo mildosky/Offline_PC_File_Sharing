@@ -308,19 +308,13 @@ function App() {
 
             {activeTab === 'wifi-direct' && (
               <div className="max-w-3xl mx-auto">
-                <WiFiDirectPanel 
-                  isElectron={isElectron} 
-                  onPeerConnected={(peer) => addExternalPeer(peer.id, peer.name)}
-                />
+                <WiFiDirectPanel isElectron={isElectron} />
               </div>
             )}
 
             {activeTab === 'nfc' && (
               <div className="max-w-3xl mx-auto">
-                <NFCPanel 
-                  isElectron={isElectron} 
-                  onPeerConnected={(peer) => addExternalPeer(peer.id, peer.name)}
-                />
+                <NFCPanel isElectron={isElectron} />
               </div>
             )}
 

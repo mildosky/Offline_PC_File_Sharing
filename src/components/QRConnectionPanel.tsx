@@ -159,11 +159,18 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
             <h3 className="text-sm font-semibold text-gray-300 mb-2">How it works:</h3>
             <ol className="text-sm text-gray-400 space-y-2 list-decimal list-inside">
               <li>Click "Generate QR Code" to create a connection code</li>
-              <li>Phone scans the QR code with camera</li>
-              <li>Phone opens mobile app and shows answer QR</li>
+              <li>Phone scans the QR code with camera (must be on same WiFi!)</li>
+              <li>Phone opens mobile interface and shows answer QR</li>
               <li>PC scans phone's QR code</li>
               <li>Connection established! Transfer files offline</li>
             </ol>
+          </div>
+
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+            <p className="text-xs text-amber-300">
+              <strong>⚠️ Important:</strong> Your phone must be connected to the <strong>same WiFi network</strong> as this PC. 
+              Your PC's IP is <strong className="text-white">192.168.100.3</strong>. Your phone should have an IP like <strong className="text-white">192.168.100.x</strong> (not a mobile data IP like 102.x.x.x).
+            </p>
           </div>
 
           {/* Manual IP Override */}

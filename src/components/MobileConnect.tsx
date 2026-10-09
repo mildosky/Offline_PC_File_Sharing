@@ -239,9 +239,36 @@ export const MobileConnect: React.FC<MobileConnectProps> = ({ offerCode: initial
                 </p>
               </div>
 
+              {/* Answer Code Display */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <p className="text-xs text-gray-400 mb-2">Connected to:</p>
-                <p className="text-sm text-white font-medium">{peerName}</p>
+                <p className="text-sm text-white font-medium mb-3">{peerName}</p>
+                
+                <details className="mt-3">
+                  <summary className="text-xs text-blue-400 cursor-pointer hover:text-blue-300">
+                    📋 Show answer code (for manual entry)
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-gray-400">
+                      If QR scanning doesn't work, copy this code and paste it on your PC:
+                    </p>
+                    <textarea
+                      value={answerCode}
+                      readOnly
+                      onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                      className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs text-gray-300 font-mono h-20 resize-none"
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(answerCode);
+                        alert('Answer code copied!');
+                      }}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium"
+                    >
+                      📋 Copy to Clipboard
+                    </button>
+                  </div>
+                </details>
               </div>
             </div>
           )}

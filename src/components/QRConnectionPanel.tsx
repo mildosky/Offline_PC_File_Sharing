@@ -35,6 +35,8 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
   const [detectedIP, setDetectedIP] = useState<string>('');
   const [manualIP, setManualIP] = useState<string>('');
   const [showManualIP, setShowManualIP] = useState(false);
+  const [manualAnswer, setManualAnswer] = useState<string>('');
+  const [showManualAnswer, setShowManualAnswer] = useState(false);
   
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-scanner-container';
@@ -73,28 +75,49 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       const html5QrCode = new Html5Qrcode(scannerContainerId);
       qrScannerRef.current = html5QrCode;
 
+      console.log('[QR Scanner] Starting camera with facingMode:', facingMode);
+
       await html5QrCode.start(
         { facingMode },
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
+          fps: 15, // Increased from 10 for faster detection
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            // Make QR box larger for better detection (80% of viewfinder)
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrBoxSize = Math.floor(minEdge * 0.8);
+            return {
+              width: qrBoxSize,
+              height: qrBoxSize,
+            };
+          },
+          aspectRatio: 1.0,
         },
-        async (decodedText) => {
-          // Phone's answer scanned
+        async (decodedText, decodedResult) => {
+          // Phone's answer scanned successfully
+          console.log('[QR Scanner] QR code detected:', decodedText.substring(0, 50) + '...');
+          console.log('[QR Scanner] Full result:', decodedResult);
+          
           try {
             await applyAnswer(decodedText);
             setMode('connected');
             setScanning(false);
             await html5QrCode.stop();
+            console.log('[QR Scanner] Connection established successfully');
           } catch (err) {
+            console.error('[QR Scanner] Failed to apply answer:', err);
             setError('Invalid QR code. Please try again.');
-            console.error(err);
           }
         },
         (errorMessage) => {
           // Scan error (ignore, keeps scanning)
+          // Log occasionally to show scanner is working
+          if (Math.random() < 0.01) { // Log ~1% of frames
+            console.log('[QR Scanner] Scanning frame...', errorMessage);
+          }
         }
       );
+      
+      console.log('[QR Scanner] Camera started successfully');
     };
 
     try {
@@ -174,6 +197,27 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
     }
     setScanning(false);
     setMode('idle');
+  };
+
+  // Handle manual answer input
+  const handleManualAnswer = async () => {
+    if (!manualAnswer.trim()) {
+      setError('Please enter the answer code from your phone');
+      return;
+    }
+
+    try {
+      setError('');
+      console.log('[Manual Input] Applying answer code...');
+      await applyAnswer(manualAnswer.trim());
+      setMode('connected');
+      setManualAnswer('');
+      setShowManualAnswer(false);
+      console.log('[Manual Input] Connection established successfully');
+    } catch (err) {
+      console.error('[Manual Input] Failed:', err);
+      setError('Invalid answer code. Please check and try again.');
+    }
   };
 
   // Reset to idle
@@ -351,13 +395,66 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       {mode === 'scanning-answer' && (
         <div className="space-y-4">
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <p className="text-sm text-gray-300 text-center mb-3">
-              Point your camera at the phone's QR code
-            </p>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <p className="text-sm text-green-400 font-medium">
+                Scanner Active - Looking for QR code...
+              </p>
+            </div>
+            
             <div
               id={scannerContainerId}
-              className="w-full aspect-square bg-black rounded-lg overflow-hidden"
-            />
+              className="w-full aspect-square bg-black rounded-lg overflow-hidden relative"
+            >
+              {/* Scanning overlay */}
+              <div className="absolute inset-0 border-2 border-green-500/50 rounded-lg pointer-events-none">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-green-500"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-green-500"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-green-500"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-green-500"></div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-gray-400 text-center">
+                📱 Hold your phone's QR code in front of the camera
+              </p>
+              <p className="text-xs text-gray-500 text-center">
+                💡 Tip: Ensure good lighting and hold steady
+              </p>
+            </div>
+          </div>
+
+          {/* Manual Input Option */}
+          <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-3">
+            <button
+              onClick={() => setShowManualAnswer(!showManualAnswer)}
+              className="w-full text-left text-sm text-yellow-300 hover:text-yellow-200 flex items-center justify-between"
+            >
+              <span>⌨️ Can't scan? Enter code manually</span>
+              <span className="text-xs">{showManualAnswer ? '▼' : '▶'}</span>
+            </button>
+            
+            {showManualAnswer && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-yellow-400">
+                  Copy the answer code from your phone and paste it here:
+                </p>
+                <textarea
+                  value={manualAnswer}
+                  onChange={(e) => setManualAnswer(e.target.value)}
+                  placeholder="Paste the answer code from your phone..."
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-yellow-500 h-24 resize-none font-mono"
+                />
+                <button
+                  onClick={handleManualAnswer}
+                  disabled={!manualAnswer.trim()}
+                  className="w-full py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-all"
+                >
+                  Connect Manually
+                </button>
+              </div>
+            )}
           </div>
 
           <button

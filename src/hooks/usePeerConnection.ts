@@ -1,13 +1,26 @@
 import { useCallback, useRef, useState } from 'react';
 import { Peer, FileTransferItem, ChatMessage } from '../types';
-import { generateId, formatFileSize } from '../utils/fileUtils';
+import { generateId } from '../utils/fileUtils';
 
-// No STUN/TURN servers - pure LAN/host-only mode
-// This ensures no internet connection is required
+// Pure LAN mode - no STUN/TURN servers needed
 const ICE_CONFIG: RTCConfiguration = {
   iceServers: [],
-  iceTransportPolicy: 'all', // Use only local/host candidates
+  iceTransportPolicy: 'all',
 };
+
+// Performance-tuned constants
+const CHUNK_SIZE = 256 * 1024; // 256KB chunks - optimal for LAN
+const MAX_BUFFER_SIZE = 16 * 1024 * 1024; // 16MB buffer threshold
+const BUFFER_LOW_THRESHOLD = 4 * 1024 * 1024; // Resume sending when buffer drops to 4MB
+
+interface SpeedStats {
+  bytesPerSecond: number;
+  averageSpeed: number;
+  peakSpeed: number;
+  totalBytes: number;
+  startTime: number;
+  elapsedMs: number;
+}
 
 export function usePeerConnection() {
   const [peers, setPeers] = useState<Peer[]>([]);
@@ -20,13 +33,91 @@ export function usePeerConnection() {
   });
   const [myCode, setMyCode] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
+  const [globalSpeed, setGlobalSpeed] = useState<SpeedStats>({
+    bytesPerSecond: 0,
+    averageSpeed: 0,
+    peakSpeed: 0,
+    totalBytes: 0,
+    startTime: 0,
+    elapsedMs: 0,
+  });
 
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
   const dataChannels = useRef<Map<string, RTCDataChannel>>(new Map());
-  const incomingFiles = useRef<Map<string, { chunks: ArrayBuffer[]; meta: any; received: number }>>(new Map());
+  const incomingFiles = useRef<Map<string, { chunks: ArrayBuffer[]; meta: any; received: number; startTime: number }>>(new Map());
+  
+  // Speed tracking
+  const speedTracker = useRef<{
+    bytesInWindow: number;
+    windowStart: number;
+    totalBytes: number;
+    peakSpeed: number;
+    startTime: number;
+    intervalId: number | null;
+  }>({
+    bytesInWindow: 0,
+    windowStart: Date.now(),
+    totalBytes: 0,
+    peakSpeed: 0,
+    startTime: 0,
+    intervalId: null,
+  });
 
   const updatePeerStatus = useCallback((peerId: string, status: Peer['status']) => {
     setPeers(prev => prev.map(p => p.id === peerId ? { ...p, status, lastSeen: new Date() } : p));
+  }, []);
+
+  // Start speed tracking interval
+  const startSpeedTracking = useCallback(() => {
+    if (speedTracker.current.intervalId) return;
+    
+    speedTracker.current.startTime = Date.now();
+    speedTracker.current.windowStart = Date.now();
+    speedTracker.current.bytesInWindow = 0;
+    speedTracker.current.totalBytes = 0;
+    speedTracker.current.peakSpeed = 0;
+    
+    speedTracker.current.intervalId = window.setInterval(() => {
+      const now = Date.now();
+      const windowDuration = (now - speedTracker.current.windowStart) / 1000; // seconds
+      const currentSpeed = windowDuration > 0 
+        ? speedTracker.current.bytesInWindow / windowDuration 
+        : 0;
+      
+      if (currentSpeed > speedTracker.current.peakSpeed) {
+        speedTracker.current.peakSpeed = currentSpeed;
+      }
+      
+      const totalElapsed = (now - speedTracker.current.startTime) / 1000;
+      const avgSpeed = totalElapsed > 0 
+        ? speedTracker.current.totalBytes / totalElapsed 
+        : 0;
+      
+      setGlobalSpeed({
+        bytesPerSecond: currentSpeed,
+        averageSpeed: avgSpeed,
+        peakSpeed: speedTracker.current.peakSpeed,
+        totalBytes: speedTracker.current.totalBytes,
+        startTime: speedTracker.current.startTime,
+        elapsedMs: now - speedTracker.current.startTime,
+      });
+      
+      // Reset window
+      speedTracker.current.windowStart = now;
+      speedTracker.current.bytesInWindow = 0;
+    }, 250); // Update 4x per second for smooth display
+  }, []);
+
+  const stopSpeedTracking = useCallback(() => {
+    if (speedTracker.current.intervalId) {
+      clearInterval(speedTracker.current.intervalId);
+      speedTracker.current.intervalId = null;
+    }
+  }, []);
+
+  const trackBytes = useCallback((bytes: number) => {
+    speedTracker.current.bytesInWindow += bytes;
+    speedTracker.current.totalBytes += bytes;
   }, []);
 
   const handleDataChannelMessage = useCallback((peerId: string, event: MessageEvent) => {
@@ -46,10 +137,13 @@ export function usePeerConnection() {
         }]);
       } else if (msg.type === 'file-meta') {
         incomingFiles.current.set(msg.transferId, {
-          chunks: [],
+          chunks: new Array(msg.totalChunks),
           meta: msg,
-          received: 0
+          received: 0,
+          startTime: Date.now()
         });
+        
+        startSpeedTracking();
         
         setTransfers(prev => [...prev, {
           id: msg.transferId,
@@ -66,8 +160,13 @@ export function usePeerConnection() {
       } else if (msg.type === 'file-complete') {
         const incoming = incomingFiles.current.get(msg.transferId);
         if (incoming) {
-          const blob = new Blob(incoming.chunks, { type: incoming.meta.fileType });
+          // Filter out undefined slots (shouldn't happen but safety)
+          const validChunks = incoming.chunks.filter(c => c !== undefined);
+          const blob = new Blob(validChunks, { type: incoming.meta.fileType });
           const url = URL.createObjectURL(blob);
+          
+          const elapsed = (Date.now() - incoming.startTime) / 1000;
+          const speed = elapsed > 0 ? incoming.meta.fileSize / elapsed : 0;
           
           setTransfers(prev => prev.map(t => 
             t.id === msg.transferId 
@@ -80,19 +179,32 @@ export function usePeerConnection() {
           a.href = url;
           a.download = incoming.meta.fileName;
           a.click();
+          
+          incomingFiles.current.delete(msg.transferId);
+          
+          // Check if any transfers still active
+          const activeTransfers = [...incomingFiles.current.values()].length;
+          if (activeTransfers === 0) {
+            stopSpeedTracking();
+          }
         }
       }
     } else if (data instanceof ArrayBuffer) {
-      // Binary data - file chunk
+      // Binary chunk with format: [transferIdLen(1)][transferId][chunkIndex(4)][chunkData]
       const view = new DataView(data);
       const transferIdLength = view.getUint8(0);
       const transferId = new TextDecoder().decode(new Uint8Array(data, 1, transferIdLength));
-      const chunkData = data.slice(1 + transferIdLength);
+      const chunkIndex = view.getUint32(1 + transferIdLength);
+      const chunkData = data.slice(1 + transferIdLength + 4);
       
       const incoming = incomingFiles.current.get(transferId);
       if (incoming) {
-        incoming.chunks.push(chunkData);
+        incoming.chunks[chunkIndex] = chunkData;
         incoming.received++;
+        
+        // Track speed
+        trackBytes(chunkData.byteLength);
+        
         const progress = Math.round((incoming.received / incoming.meta.totalChunks) * 100);
         
         setTransfers(prev => prev.map(t => 
@@ -100,10 +212,14 @@ export function usePeerConnection() {
         ));
       }
     }
-  }, []);
+  }, [startSpeedTracking, stopSpeedTracking, trackBytes]);
 
   const setupDataChannel = useCallback((peerId: string, channel: RTCDataChannel) => {
     channel.binaryType = 'arraybuffer';
+    
+    // Optimize for high throughput
+    // Note: bufferedAmountLowThreshold is read-only in some browsers, 
+    // but we'll manage backpressure manually
     
     channel.onmessage = (event) => handleDataChannelMessage(peerId, event);
     
@@ -128,8 +244,10 @@ export function usePeerConnection() {
     };
 
     if (isInitiator) {
+      // Use unordered for maximum throughput - we handle ordering via chunk indices
       const channel = pc.createDataChannel('fileTransfer', {
-        ordered: true,
+        ordered: false, // Unordered = faster, we reconstruct by index
+        maxRetransmits: 10,
       });
       setupDataChannel(peerId, channel);
     } else {
@@ -149,18 +267,14 @@ export function usePeerConnection() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     
-    // Wait for ICE gathering
     await new Promise<void>((resolve) => {
       if (pc.iceGatheringState === 'complete') {
         resolve();
       } else {
         pc.onicegatheringstatechange = () => {
-          if (pc.iceGatheringState === 'complete') {
-            resolve();
-          }
+          if (pc.iceGatheringState === 'complete') resolve();
         };
-        // Timeout after 3 seconds
-        setTimeout(resolve, 3000);
+        setTimeout(resolve, 2000);
       }
     });
 
@@ -189,17 +303,14 @@ export function usePeerConnection() {
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         
-        // Wait for ICE gathering
         await new Promise<void>((resolve) => {
           if (pc.iceGatheringState === 'complete') {
             resolve();
           } else {
             pc.onicegatheringstatechange = () => {
-              if (pc.iceGatheringState === 'complete') {
-                resolve();
-              }
+              if (pc.iceGatheringState === 'complete') resolve();
             };
-            setTimeout(resolve, 3000);
+            setTimeout(resolve, 2000);
           }
         });
 
@@ -220,7 +331,6 @@ export function usePeerConnection() {
 
         return answerCode;
       } else if (decoded.type === 'answer') {
-        // Find the pending connection
         const entries = [...peerConnections.current.entries()];
         const lastEntry = entries[entries.length - 1];
         if (lastEntry) {
@@ -243,6 +353,55 @@ export function usePeerConnection() {
     return null;
   }, [createPeerConnection, myPeerName, myPeerId]);
 
+  const applyAnswer = useCallback(async (answerCodeStr: string) => {
+    try {
+      const decoded = JSON.parse(atob(answerCodeStr));
+      if (decoded.type === 'answer') {
+        const entries = [...peerConnections.current.entries()];
+        const lastEntry = entries[entries.length - 1];
+        if (lastEntry) {
+          const [peerId, pc] = lastEntry;
+          await pc.setRemoteDescription(decoded.sdp);
+          
+          setPeers(prev => {
+            const exists = prev.find(p => p.id === peerId);
+            if (exists) return prev;
+            return [...prev, {
+              id: peerId,
+              name: decoded.senderName,
+              status: 'connecting',
+              avatar: decoded.senderName.charAt(0).toUpperCase(),
+              lastSeen: new Date()
+            }];
+          });
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('Error applying answer:', err);
+    }
+    return false;
+  }, []);
+
+  // Wait for buffer to drain before sending more
+  const waitForBufferDrain = (channel: RTCDataChannel): Promise<void> => {
+    return new Promise((resolve) => {
+      if (channel.bufferedAmount < BUFFER_LOW_THRESHOLD) {
+        resolve();
+        return;
+      }
+      
+      const check = () => {
+        if (channel.bufferedAmount < BUFFER_LOW_THRESHOLD) {
+          resolve();
+        } else {
+          setTimeout(check, 1); // Check every 1ms for minimal latency
+        }
+      };
+      setTimeout(check, 1);
+    });
+  };
+
   const sendFile = useCallback(async (file: File, peerId: string) => {
     const channel = dataChannels.current.get(peerId);
     if (!channel || channel.readyState !== 'open') {
@@ -251,8 +410,10 @@ export function usePeerConnection() {
     }
 
     const transferId = generateId();
-    const totalChunks = Math.ceil(file.size / (64 * 1024));
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     const peer = peers.find(p => p.id === peerId);
+    const encoder = new TextEncoder();
+    const transferIdBytes = encoder.encode(transferId);
 
     // Send file metadata
     channel.send(JSON.stringify({
@@ -264,6 +425,8 @@ export function usePeerConnection() {
       totalChunks,
       senderName: myPeerName,
     }));
+
+    startSpeedTracking();
 
     setTransfers(prev => [...prev, {
       id: transferId,
@@ -278,33 +441,40 @@ export function usePeerConnection() {
       timestamp: new Date()
     }]);
 
-    // Send chunks
-    const CHUNK_SIZE = 64 * 1024;
-    const encoder = new TextEncoder();
+    // Send chunks with backpressure management
+    let sentChunks = 0;
     
     for (let i = 0; i < totalChunks; i++) {
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, file.size);
       const chunk = await file.slice(start, end).arrayBuffer();
       
-      // Create message with transfer ID prefix
-      const transferIdBytes = encoder.encode(transferId);
-      const message = new Uint8Array(1 + transferIdBytes.length + chunk.byteLength);
+      // Build message: [transferIdLen(1)][transferId][chunkIndex(4)][chunkData]
+      const message = new Uint8Array(1 + transferIdBytes.length + 4 + chunk.byteLength);
       message[0] = transferIdBytes.length;
       message.set(transferIdBytes, 1);
-      message.set(new Uint8Array(chunk), 1 + transferIdBytes.length);
+      
+      // Write chunk index as 4-byte big-endian
+      const indexView = new DataView(message.buffer);
+      indexView.setUint32(1 + transferIdBytes.length, i);
+      
+      message.set(new Uint8Array(chunk), 1 + transferIdBytes.length + 4);
+      
+      // Backpressure: wait if buffer is full
+      if (channel.bufferedAmount > MAX_BUFFER_SIZE) {
+        await waitForBufferDrain(channel);
+      }
       
       channel.send(message.buffer);
+      sentChunks++;
       
-      const progress = Math.round(((i + 1) / totalChunks) * 100);
+      // Track speed
+      trackBytes(chunk.byteLength);
+      
+      const progress = Math.round((sentChunks / totalChunks) * 100);
       setTransfers(prev => prev.map(t => 
         t.id === transferId ? { ...t, progress } : t
       ));
-      
-      // Small delay to prevent overwhelming the channel
-      if (i % 10 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
     }
 
     // Signal completion
@@ -316,7 +486,7 @@ export function usePeerConnection() {
     setTransfers(prev => prev.map(t => 
       t.id === transferId ? { ...t, progress: 100, status: 'completed' } : t
     ));
-  }, [peers, myPeerName]);
+  }, [peers, myPeerName, startSpeedTracking, trackBytes]);
 
   const sendChatMessage = useCallback((text: string, peerId: string) => {
     const channel = dataChannels.current.get(peerId);
@@ -348,39 +518,6 @@ export function usePeerConnection() {
     setPeers(prev => prev.filter(p => p.id !== peerId));
   }, []);
 
-  const applyAnswer = useCallback(async (answerCodeStr: string) => {
-    try {
-      const decoded = JSON.parse(atob(answerCodeStr));
-      if (decoded.type === 'answer') {
-        // Find the most recent pending connection
-        const entries = [...peerConnections.current.entries()];
-        const lastEntry = entries[entries.length - 1];
-        if (lastEntry) {
-          const [peerId, pc] = lastEntry;
-          await pc.setRemoteDescription(decoded.sdp);
-          
-          setPeers(prev => {
-            // Check if peer already exists
-            const exists = prev.find(p => p.id === peerId);
-            if (exists) return prev;
-            return [...prev, {
-              id: peerId,
-              name: decoded.senderName,
-              status: 'connecting',
-              avatar: decoded.senderName.charAt(0).toUpperCase(),
-              lastSeen: new Date()
-            }];
-          });
-          return true;
-        }
-      }
-    } catch (err) {
-      console.error('Error applying answer:', err);
-    }
-    return false;
-  }, []);
-
-  // Demo mode - simulate connections for testing UI
   const addDemoPeer = useCallback(() => {
     const demoNames = ['Alpha-PC', 'Beta-Workstation', 'Gamma-Laptop', 'Delta-Desktop', 'Epsilon-Mac'];
     const name = demoNames[peers.length % demoNames.length];
@@ -394,23 +531,46 @@ export function usePeerConnection() {
       lastSeen: new Date()
     }]);
 
-    // Simulate receiving a file
+    // Simulate a high-speed file receive
     setTimeout(() => {
       const transferId = generateId();
+      const fileSize = Math.floor(Math.random() * 500_000_000) + 50_000_000; // 50-550 MB
+      const startTime = Date.now();
+      
+      // Simulate progressive transfer at high speed
       setTransfers(prev => [...prev, {
         id: transferId,
-        fileName: `document_${Math.floor(Math.random() * 100)}.pdf`,
-        fileSize: Math.floor(Math.random() * 5000000) + 100000,
-        fileType: 'application/pdf',
-        progress: 100,
-        status: 'completed',
+        fileName: `project_files_${Math.floor(Math.random() * 100)}.zip`,
+        fileSize,
+        fileType: 'application/zip',
+        progress: 0,
+        status: 'receiving',
         peerId: id,
         peerName: name,
         direction: 'received',
         timestamp: new Date()
       }]);
-    }, 2000);
-  }, [peers.length]);
+      
+      startSpeedTracking();
+      
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 15 + 5; // 5-20% per tick
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          setTransfers(prev => prev.map(t => 
+            t.id === transferId ? { ...t, progress: 100, status: 'completed' } : t
+          ));
+          stopSpeedTracking();
+        } else {
+          setTransfers(prev => prev.map(t => 
+            t.id === transferId ? { ...t, progress: Math.round(progress) } : t
+          ));
+        }
+      }, 100);
+    }, 1500);
+  }, [peers.length, startSpeedTracking, stopSpeedTracking]);
 
   return {
     peers,
@@ -421,6 +581,7 @@ export function usePeerConnection() {
     setMyPeerName,
     myCode,
     isListening,
+    globalSpeed,
     generateConnectionCode,
     connectWithCode,
     applyAnswer,

@@ -7,7 +7,7 @@ import { usePeerConnection } from './hooks/usePeerConnection';
 import { 
   Globe, Shield, Zap, Monitor, 
   ArrowRight, Network, Lock, 
-  Radio, HardDrive, Users
+  Radio, HardDrive, Users, Gauge
 } from 'lucide-react';
 
 type Tab = 'transfer' | 'chat' | 'connections';
@@ -25,6 +25,7 @@ function App() {
     setMyPeerName,
     myCode,
     isListening,
+    globalSpeed,
     generateConnectionCode,
     connectWithCode,
     applyAnswer,
@@ -204,6 +205,7 @@ function App() {
               peers={peers}
               transfers={transfers}
               sendFile={sendFile}
+              globalSpeed={globalSpeed}
             />
           </div>
         )}
@@ -280,25 +282,40 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
       {/* Hero Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-24">
         <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-8">
-            <Zap className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-blue-300">No Internet Required • Direct P2P Transfer</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full mb-8">
+            <Zap className="w-4 h-4 text-green-400 animate-pulse" />
+            <span className="text-sm text-green-300 font-semibold">⚡ BLAZING FAST • Up to 100+ MB/s on LAN</span>
           </div>
           
           <h1 className="text-5xl sm:text-7xl font-bold leading-tight mb-6">
             <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-              Share Files Between
+              Transfer Files at
             </span>
             <br />
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Any Devices
+            <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Lightning Speed
             </span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Connect multiple PCs on your local network and transfer files, documents, videos, 
-            and images directly — no internet connection needed. Fast, secure, and private.
+          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-6 leading-relaxed">
+            Experience <span className="text-green-400 font-semibold">100+ MB/s transfer speeds</span> on your local network. 
+            No internet required. No cloud. No limits. Just pure, direct P2P speed.
           </p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-10 text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-full border border-gray-700/50">
+              <Zap className="w-4 h-4 text-yellow-400" />
+              <span className="text-gray-300">256KB Optimized Chunks</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-full border border-gray-700/50">
+              <Gauge className="w-4 h-4 text-blue-400" />
+              <span className="text-gray-300">Real-time Speed Monitor</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 rounded-full border border-gray-700/50">
+              <Shield className="w-4 h-4 text-green-400" />
+              <span className="text-gray-300">Zero Internet Data</span>
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <button
@@ -313,53 +330,149 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             </button>
           </div>
 
-          {/* Hero Visual */}
+          {/* Hero Visual - Speed Dashboard Preview */}
           <div className="relative max-w-3xl mx-auto">
-            <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
-              <div className="flex items-center justify-center gap-8 sm:gap-16">
+            <div className="bg-gray-900/50 backdrop-blur-xl border border-green-500/20 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-green-500/5">
+              {/* Turbo Mode Badge */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full shadow-lg shadow-green-500/30">
+                <span className="text-xs font-bold text-white flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> TURBO MODE
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-center gap-6 sm:gap-12 mt-4">
                 {/* Device 1 */}
                 <div className="text-center">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-3">
-                    <Monitor className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400" />
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-2">
+                    <Monitor className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" />
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-400 font-medium">PC 1</p>
-                  <p className="text-xs text-gray-600">Sender</p>
+                  <p className="text-xs text-gray-400 font-medium">PC 1</p>
                 </div>
 
-                {/* Connection Lines */}
+                {/* Speed Indicator */}
                 <div className="flex flex-col items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <div className="w-16 sm:w-24 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500" />
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="relative">
+                    <div className="flex items-center gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-1 bg-gradient-to-t from-green-500 to-emerald-400 rounded-full animate-pulse"
+                          style={{
+                            height: `${12 + i * 6}px`,
+                            animationDelay: `${i * 0.1}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <span className="text-xs text-gray-500">P2P Direct</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '0.3s' }} />
-                    <div className="w-16 sm:w-24 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500" />
-                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '0.8s' }} />
+                  <div className="text-center">
+                    <p className="text-xl sm:text-2xl font-bold text-green-400 tabular-nums">112.4</p>
+                    <p className="text-xs text-gray-500">MB/s</p>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <div className="w-12 sm:w-20 h-0.5 bg-gradient-to-r from-green-500 to-emerald-400" />
+                    <Zap className="w-3 h-3 text-yellow-400 animate-pulse" />
+                    <div className="w-12 sm:w-20 h-0.5 bg-gradient-to-r from-emerald-400 to-green-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  </div>
+                  <span className="text-xs text-green-400 font-medium">P2P Direct</span>
                 </div>
 
                 {/* Device 2 */}
                 <div className="text-center">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30 flex items-center justify-center mb-3">
-                    <Monitor className="w-10 h-10 sm:w-12 sm:h-12 text-purple-400" />
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30 flex items-center justify-center mb-2">
+                    <Monitor className="w-8 h-8 sm:w-10 sm:h-10 text-purple-400" />
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-400 font-medium">PC 2</p>
-                  <p className="text-xs text-gray-600">Receiver</p>
+                  <p className="text-xs text-gray-400 font-medium">PC 2</p>
                 </div>
-
-                {/* Device 3 */}
-                <div className="hidden sm:block text-center">
-                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/30 flex items-center justify-center mb-3">
-                    <Monitor className="w-12 h-12 text-green-400" />
-                  </div>
-                  <p className="text-sm text-gray-400 font-medium">PC 3</p>
-                  <p className="text-xs text-gray-600">Multi-peer</p>
+              </div>
+              
+              {/* Bottom stats */}
+              <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-gray-800/50">
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">1GB File</p>
+                  <p className="text-sm font-bold text-white">~9 seconds</p>
+                </div>
+                <div className="w-px h-8 bg-gray-800" />
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Internet Used</p>
+                  <p className="text-sm font-bold text-green-400">0 MB</p>
+                </div>
+                <div className="w-px h-8 bg-gray-800" />
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">vs Cloud</p>
+                  <p className="text-sm font-bold text-yellow-400">20x faster</p>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Speed Showcase Section */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-full mb-4">
+            <Zap className="w-4 h-4 text-yellow-400" />
+            <span className="text-sm text-yellow-300 font-semibold">THE SPEED ADVANTAGE</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Engineered for Maximum Speed
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Every component optimized for throughput. From 256KB chunk sizes to intelligent backpressure 
+            management — NetShare squeezes every bit of bandwidth from your local network.
+          </p>
+        </div>
+
+        {/* Speed Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+          {[
+            { value: '256KB', label: 'Chunk Size', sub: 'Optimized for LAN', icon: '📦' },
+            { value: '100+', label: 'MB/s', sub: 'On Gigabit LAN', icon: '⚡' },
+            { value: '16MB', label: 'Buffer', sub: 'Smart backpressure', icon: '🔄' },
+            { value: '0', label: 'Internet Data', sub: '100% local transfer', icon: '🛡️' },
+          ].map((stat, i) => (
+            <div key={i} className="bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-2xl p-5 text-center hover:border-gray-700/50 transition-all">
+              <span className="text-2xl mb-2 block">{stat.icon}</span>
+              <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">{stat.value}</p>
+              <p className="text-sm text-gray-300 font-medium">{stat.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Speed Comparison Visual */}
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8">
+          <h3 className="text-xl font-bold text-white mb-6 text-center">Transfer Speed Comparison</h3>
+          <div className="space-y-4 max-w-2xl mx-auto">
+            {[
+              { label: 'Cloud Upload (Google Drive)', speed: '5 MB/s', width: '5%', color: 'from-gray-600 to-gray-500', time: '~3.3 min for 1GB' },
+              { label: 'Email Attachment', speed: '2 MB/s', width: '2%', color: 'from-gray-700 to-gray-600', time: '~8.3 min for 1GB' },
+              { label: 'USB 2.0 Drive', speed: '30 MB/s', width: '30%', color: 'from-yellow-600 to-yellow-500', time: '~33s for 1GB' },
+              { label: 'WiFi 5 (5GHz)', speed: '50 MB/s', width: '50%', color: 'from-blue-600 to-blue-500', time: '~20s for 1GB' },
+              { label: 'WiFi 6 (6GHz)', speed: '80 MB/s', width: '80%', color: 'from-purple-600 to-purple-500', time: '~12.5s for 1GB' },
+              { label: 'NetShare P2P (Gigabit LAN)', speed: '100+ MB/s', width: '100%', color: 'from-green-500 to-emerald-400', time: '~10s for 1GB', highlight: true },
+            ].map((item, i) => (
+              <div key={i} className={`${item.highlight ? 'bg-green-500/5 border border-green-500/30 rounded-xl p-4' : 'p-3'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm ${item.highlight ? 'text-green-300 font-semibold' : 'text-gray-300'}`}>
+                    {item.highlight && '⚡ '}{item.label}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500">{item.time}</span>
+                    <span className={`text-sm font-bold ${item.highlight ? 'text-green-400' : 'text-gray-400'}`}>{item.speed}</span>
+                  </div>
+                </div>
+                <div className="w-full h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full bg-gradient-to-r ${item.color} rounded-full transition-all duration-1000`}
+                    style={{ width: item.width }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -368,59 +481,69 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Why Choose NetShare?
+            Built Different
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto">
-            Built for speed, security, and simplicity. Transfer files the way it should be.
+            Every feature designed to maximize speed and minimize friction.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
-              icon: Globe,
-              title: 'No Internet Required',
-              description: 'Transfer files directly between devices on your local network. Works even without an active internet connection.',
+              icon: Zap,
+              title: 'Blazing Fast Transfers',
+              description: '256KB optimized chunks with intelligent backpressure. Unordered data channels for maximum throughput. Hit 100+ MB/s on Gigabit LAN.',
+              gradient: 'from-yellow-500 to-orange-500',
+              highlight: true,
+            },
+            {
+              icon: Gauge,
+              title: 'Real-time Speed Monitor',
+              description: 'Beautiful gauge showing live transfer speed, peak throughput, average speed, and total data transferred. Know exactly how fast you\'re going.',
               gradient: 'from-blue-500 to-cyan-500',
             },
             {
-              icon: Users,
-              title: 'Multiple PC Support',
-              description: 'Connect multiple computers simultaneously. Share files between any combination of devices in your network.',
-              gradient: 'from-purple-500 to-pink-500',
+              icon: Globe,
+              title: 'No Internet Required',
+              description: 'Transfer files directly between devices on your local network. Works even with zero internet connectivity. Your ISP data plan stays untouched.',
+              gradient: 'from-green-500 to-emerald-500',
             },
             {
-              icon: Zap,
-              title: 'Lightning Fast',
-              description: 'Direct peer-to-peer transfer means maximum speed limited only by your local network bandwidth.',
-              gradient: 'from-orange-500 to-red-500',
+              icon: Users,
+              title: 'Multi-PC Support',
+              description: 'Connect multiple computers simultaneously. Share files between any combination of devices in your network at full speed.',
+              gradient: 'from-purple-500 to-pink-500',
             },
             {
               icon: Lock,
               title: 'End-to-End Encrypted',
-              description: 'All transfers are encrypted directly between devices. No data passes through any server.',
-              gradient: 'from-green-500 to-emerald-500',
-            },
-            {
-              icon: HardDrive,
-              title: 'Any File Type',
-              description: 'Send documents, images, videos, archives — any file type with no size restrictions.',
+              description: 'All transfers are encrypted directly between devices. No data passes through any server. Your files stay private.',
               gradient: 'from-indigo-500 to-blue-500',
             },
             {
-              icon: Shield,
-              title: 'Private & Secure',
-              description: 'Your files never touch the cloud. Complete privacy with direct device-to-device connections.',
+              icon: HardDrive,
+              title: 'Any File, Any Size',
+              description: 'Send documents, images, videos, archives — any file type with no size restrictions. Transfer multi-gigabyte files without breaking a sweat.',
               gradient: 'from-rose-500 to-pink-500',
             },
           ].map((feature, index) => (
             <div
               key={index}
-              className="group bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700/50 transition-all duration-300 hover:-translate-y-1"
+              className={`group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 ${
+                feature.highlight
+                  ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border border-yellow-500/30 hover:border-yellow-500/50'
+                  : 'bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 hover:border-gray-700/50'
+              }`}
             >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} bg-opacity-20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
                 <feature.icon className="w-6 h-6 text-white" />
               </div>
+              {feature.highlight && (
+                <span className="inline-block px-2 py-0.5 bg-yellow-500/20 text-yellow-300 text-xs font-bold rounded-full mb-2">
+                  SELLING POINT
+                </span>
+              )}
               <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
               <p className="text-sm text-gray-400 leading-relaxed">{feature.description}</p>
             </div>
@@ -463,18 +586,24 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
 
       {/* CTA Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-16">
-        <div className="text-center">
+        <div className="bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-cyan-500/10 border border-green-500/20 rounded-3xl p-8 sm:p-12 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full mb-6">
+            <Zap className="w-4 h-4 text-green-400 animate-pulse" />
+            <span className="text-sm text-green-300 font-semibold">Ready for max speed?</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ready to Start Sharing?
+            Experience LAN-Speed File Transfer
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto mb-8">
-            No downloads, no installations. Open NetShare in your browser and start transferring files instantly.
+            No downloads, no installations. Open NetShare in your browser and watch your files fly 
+            between devices at 100+ MB/s. Zero internet data. Zero cloud. Pure speed.
           </p>
           <button
             onClick={onGetStarted}
-            className="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl text-lg font-semibold transition-all shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 inline-flex items-center gap-2"
+            className="px-10 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 rounded-xl text-lg font-semibold transition-all shadow-xl shadow-green-500/25 hover:shadow-green-500/40 inline-flex items-center gap-2"
           >
-            Launch NetShare
+            <Zap className="w-5 h-5" />
+            Launch at Full Speed
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>

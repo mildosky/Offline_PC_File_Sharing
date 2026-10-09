@@ -39,7 +39,12 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
     try {
       setError('');
       const offer = await generateConnectionCode();
-      setOfferCode(offer);
+      
+      // Create a deep link URL using the netshare:// protocol
+      // When scanned, this will open the NetShare app directly
+      const qrUrl = `netshare://connect?offer=${encodeURIComponent(offer)}`;
+      
+      setOfferCode(qrUrl);
       setMode('showing-offer');
     } catch (err) {
       setError('Failed to generate connection code');

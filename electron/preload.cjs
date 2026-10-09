@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onNFCDeviceDetected: (callback) => {
     ipcRenderer.on('nfc-device-detected', (event, device) => callback(device));
   },
+  onDeepLink: (callback) => {
+    ipcRenderer.on('deep-link', (event, url) => callback(url));
+  },
   
   // Platform info
   platform: process.platform,

@@ -41,6 +41,7 @@ export interface ElectronAPI {
   onPeerDiscovered: (callback: (data: { id: string; name: string; host: string; port: number; addresses: string[] }) => void) => void;
   onTrayAction: (callback: (action: string) => void) => void;
   onNFCDeviceDetected: (callback: (device: { id: string; name: string; type: string }) => void) => void;
+  onDeepLink: (callback: (url: string) => void) => void;
   
   // Platform info
   platform: string;

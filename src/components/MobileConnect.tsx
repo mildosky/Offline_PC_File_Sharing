@@ -13,13 +13,39 @@ export const MobileConnect: React.FC<MobileConnectProps> = ({ offerCode: initial
   const [error, setError] = useState<string>('');
   const [peerName, setPeerName] = useState<string>('');
 
-  // Extract offer from URL hash
+  // Extract offer from URL hash or deep link
   useEffect(() => {
     const hash = window.location.hash.slice(1);
+    
+    // Check for deep link from Electron
+    if (window.electronAPI?.onDeepLink) {
+      window.electronAPI.onDeepLink((url: string) => {
+        try {
+          const urlObj = new URL(url);
+          const offer = urlObj.searchParams.get('offer');
+          if (offer) {
+            setOfferCode(decodeURIComponent(offer));
+          }
+        } catch (err) {
+          setError('Invalid deep link URL');
+        }
+      });
+    }
+    
+    // Check for URL hash parameter
     if (hash && !offerCode) {
       try {
-        const decoded = decodeURIComponent(hash);
-        setOfferCode(decoded);
+        // Parse hash like: mobile&offer=ENCODED_OFFER
+        const params = new URLSearchParams(hash);
+        const offer = params.get('offer');
+        
+        if (offer) {
+          setOfferCode(decodeURIComponent(offer));
+        } else if (hash.startsWith('mobile&offer=')) {
+          // Fallback for older format
+          const offerPart = hash.substring('mobile&offer='.length);
+          setOfferCode(decodeURIComponent(offerPart));
+        }
       } catch (err) {
         setError('Invalid connection code in URL');
       }

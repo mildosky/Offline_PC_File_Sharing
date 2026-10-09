@@ -315,8 +315,63 @@ ipcMain.handle('send-ndef-message', async (event, message) => {
   return true;
 });
 
-// App lifecycle
+// Register custom protocol for deep linking
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('netshare', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('netshare');
+}
+
+// Handle protocol URLs
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  if (mainWindow) {
+    mainWindow.webContents.send('deep-link', url);
+    mainWindow.show();
+  }
+});
+
+// Handle second instance (Windows/Linux)
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      
+      // Check if there's a protocol URL in the command line
+      const url = commandLine.find(arg => arg.startsWith('netshare://'));
+      if (url) {
+        mainWindow.webContents.send('deep-link', url);
+      }
+    }
+  });
+}
+
+// Configure permissions for camera/microphone
 app.whenReady().then(() => {
+  const { session } = require('electron');
+  
+  // Allow camera and microphone access
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
+  
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
+      return true;
+    }
+    return false;
+  });
+  
   createWindow();
   createTray();
   initBonjour();

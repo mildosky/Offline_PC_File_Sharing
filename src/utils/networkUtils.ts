@@ -29,37 +29,42 @@ export async function getLocalIP(): Promise<string> {
  * Filter out virtual/VPN adapter IPs and return the real LAN IP
  */
 function filterRealIP(ips: string[]): string {
-  // Priority order for real network adapters
-  const priority = [
-    // Typical home/office WiFi ranges
-    /^192\.168\.(1|0)\./,  // 192.168.0.x and 192.168.1.x (most common)
-    /^192\.168\./,          // Other 192.168.x.x ranges
-    /^10\.0\.0\./,          // 10.0.0.x (common home network)
-    /^10\./,                // Other 10.x.x.x ranges
-  ];
-
-  // Virtual/VPN adapters to exclude
+  // Virtual/VPN adapters to exclude (check these FIRST)
   const virtualPatterns = [
-    /^192\.168\.56\./,      // VirtualBox
+    /^192\.168\.56\./,      // VirtualBox Host-Only
     /^192\.168\.99\./,      // Docker Machine
     /^172\.(1[6-9]|2[0-9]|3[0-1])\./,  // Docker/VPN ranges
     /^169\.254\./,          // Link-local
     /^127\./,               // Loopback
     /^0\./,                 // Invalid
   ];
-
-  // First, try to find a priority IP
+  
+  // Filter out virtual IPs first
+  const realIPs = ips.filter(ip => !virtualPatterns.some(pattern => pattern.test(ip)));
+  
+  if (realIPs.length === 0) {
+    return ips[0] || 'localhost';
+  }
+  
+  // Priority order for real network adapters
+  const priority = [
+    // Typical home/office WiFi ranges
+    /^192\.168\.(1|0)\./,  // 192.168.0.x and 192.168.1.x (most common)
+    /^192\.168\./,          // Other 192.168.x.x ranges (like 192.168.100.x)
+    /^10\.0\.0\./,          // 10.0.0.x (common home network)
+    /^10\./,                // Other 10.x.x.x ranges
+  ];
+  
+  // Try to find a priority IP from the filtered list
   for (const pattern of priority) {
-    const match = ips.find(ip => pattern.test(ip));
+    const match = realIPs.find(ip => pattern.test(ip));
     if (match) {
       return match;
     }
   }
-
-  // If no priority match, return first non-virtual IP
-  const realIP = ips.find(ip => !virtualPatterns.some(pattern => pattern.test(ip)));
   
-  return realIP || ips[0] || 'localhost';
+  // If no priority match, return first real IP
+  return realIPs[0];
 }
 
 /**

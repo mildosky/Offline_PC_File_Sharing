@@ -275,16 +275,28 @@ ipcMain.handle('get-local-ip', async () => {
   const os = require('os');
   const interfaces = os.networkInterfaces();
   const addresses = [];
+  const wifiAddresses = [];
+  const ethernetAddresses = [];
+  const otherAddresses = [];
   
   for (const name of Object.keys(interfaces)) {
     for (const interface of interfaces[name]) {
       if (interface.family === 'IPv4' && !interface.internal) {
-        addresses.push(interface.address);
+        const nameLower = name.toLowerCase();
+        // Prioritize WiFi and Ethernet adapters
+        if (nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('wlan') || nameLower.includes('wireless')) {
+          wifiAddresses.push(interface.address);
+        } else if (nameLower.includes('ethernet') || nameLower.includes('eth')) {
+          ethernetAddresses.push(interface.address);
+        } else {
+          otherAddresses.push(interface.address);
+        }
       }
     }
   }
   
-  return addresses;
+  // Return WiFi first, then Ethernet, then others
+  return [...wifiAddresses, ...ethernetAddresses, ...otherAddresses];
 });
 
 ipcMain.handle('get-server-port', async () => {
@@ -451,26 +463,34 @@ if (!gotTheLock) {
 app.whenReady().then(() => {
   const { session } = require('electron');
   
-  // Enable Web Bluetooth
+  // Enable Web Bluetooth and camera
   app.commandLine.appendSwitch('enable-web-bluetooth');
-  
-  // Allow camera, microphone, and bluetooth access
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
-      callback(true);
-    } else {
-      callback(false);
-    }
-  });
-  
-  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
-    if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
-      return true;
-    }
-    return false;
-  });
+  app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
   
   createWindow();
+  
+  // Set up permissions after window is created, using the window's session
+  if (mainWindow) {
+    const windowSession = mainWindow.webContents.session;
+    
+    // Allow camera, microphone, and bluetooth access
+    windowSession.setPermissionRequestHandler((webContents, permission, callback) => {
+      console.log('Permission requested:', permission);
+      if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    });
+    
+    windowSession.setPermissionCheckHandler((webContents, permission) => {
+      if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
+        return true;
+      }
+      return false;
+    });
+  }
+  
   createTray();
   initHttpServer(); // Start HTTP server for mobile access
   initBonjour();

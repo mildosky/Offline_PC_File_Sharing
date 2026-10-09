@@ -99,10 +99,22 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
           // Scan error (ignore, keeps scanning)
         }
       );
-    } catch (err) {
-      setError('Failed to start camera. Please allow camera access.');
+    } catch (err: any) {
+      console.error('Camera error:', err);
       setScanning(false);
-      console.error(err);
+      
+      // Provide specific error messages based on error type
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError('Camera access denied. Please allow camera permission in Windows Settings > Privacy > Camera, then restart the app.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setError('No camera found. Please connect a camera and try again.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setError('Camera is already in use by another application. Please close other apps using the camera.');
+      } else if (err.name === 'OverconstrainedError') {
+        setError('Camera configuration not supported. Please try a different camera.');
+      } else {
+        setError(`Camera error: ${err.message || 'Unknown error'}. Please check camera permissions in Windows Settings.`);
+      }
     }
   };
 

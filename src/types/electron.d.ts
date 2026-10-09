@@ -8,6 +8,7 @@ export interface ElectronAPI {
   
   // System info
   getLocalIP: () => Promise<string[]>;
+  getServerPort: () => Promise<number>;
   
   // Notifications
   showNotification: (options: { title: string; body: string }) => Promise<void>;
@@ -42,6 +43,7 @@ export interface ElectronAPI {
   onTrayAction: (callback: (action: string) => void) => void;
   onNFCDeviceDetected: (callback: (device: { id: string; name: string; type: string }) => void) => void;
   onDeepLink: (callback: (url: string) => void) => void;
+  onServerPort: (callback: (port: number) => void) => void;
   
   // Platform info
   platform: string;

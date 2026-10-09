@@ -143,7 +143,19 @@ function getLocalIPViaWebRTC(): Promise<string> {
  */
 export async function getMobileConnectionURL(offerCode: string, manualIP?: string): Promise<string> {
   const ip = manualIP || await getLocalIP();
-  const port = window.location.port || '3000';
+  
+  // Get server port from Electron if available, otherwise use window.location.port or default to 3000
+  let port = '3000';
+  if (window.electronAPI?.getServerPort) {
+    try {
+      port = (await window.electronAPI.getServerPort()).toString();
+    } catch (e) {
+      port = window.location.port || '3000';
+    }
+  } else {
+    port = window.location.port || '3000';
+  }
+  
   const encodedOffer = encodeURIComponent(offerCode);
   
   // Use hash-based routing for compatibility with file:// protocol

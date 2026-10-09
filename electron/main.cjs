@@ -1,10 +1,14 @@
 const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
+const http = require('http');
+const fs = require('fs');
 const Bonjour = require('bonjour-service');
 
 let mainWindow;
 let tray;
 let bonjour;
+let httpServer;
+let serverPort = 3000;
 
 // Create the main application window
 function createWindow() {
@@ -129,34 +133,121 @@ function createTray() {
   });
 }
 
+// Initialize HTTP server to serve the app to mobile devices
+function initHttpServer() {
+  const distPath = path.join(__dirname, '../dist');
+  
+  httpServer = http.createServer((req, res) => {
+    // Handle CORS for mobile access
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+    
+    let filePath;
+    const url = req.url.split('?')[0]; // Remove query params
+    
+    // Serve index.html for all routes (SPA routing)
+    if (url === '/' || url === '/mobile' || url.startsWith('/#/')) {
+      filePath = path.join(distPath, 'index.html');
+    } else {
+      // Serve static assets
+      filePath = path.join(distPath, url);
+    }
+    
+    // Check if file exists
+    fs.stat(filePath, (err, stats) => {
+      if (err || !stats.isFile()) {
+        // Fallback to index.html for SPA routing
+        filePath = path.join(distPath, 'index.html');
+      }
+      
+      // Determine content type
+      const ext = path.extname(filePath);
+      const contentTypes = {
+        '.html': 'text/html',
+        '.js': 'application/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.svg': 'image/svg+xml',
+      };
+      
+      const contentType = contentTypes[ext] || 'application/octet-stream';
+      
+      // Serve the file
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+      });
+    });
+  });
+  
+  // Try to start on port 3000, fall back to other ports if needed
+  const tryPort = (port) => {
+    httpServer.listen(port, '0.0.0.0', () => {
+      serverPort = port;
+      console.log(`HTTP server listening on http://0.0.0.0:${port}`);
+      console.log(`Mobile devices can access: http://<your-ip>:${port}/#/mobile`);
+    });
+  };
+  
+  httpServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${serverPort} in use, trying ${serverPort + 1}...`);
+      serverPort++;
+      tryPort(serverPort);
+    } else {
+      console.error('HTTP server error:', err);
+    }
+  });
+  
+  tryPort(serverPort);
+}
+
 // Initialize mDNS/Bonjour for auto-discovery
 function initBonjour() {
   bonjour = new Bonjour();
   
-  // Publish our service
+  // Publish our HTTP service so phones can find it
   const service = bonjour.publish({
     name: 'NetShare-' + process.pid,
-    type: 'netshare',
-    port: 9876,
+    type: 'http',
+    port: serverPort,
     txt: {
       version: '1.0.0',
-      protocol: 'webrtc'
+      protocol: 'webrtc',
+      path: '/#/mobile'
     }
   });
   
-  console.log('Published NetShare service via mDNS');
+  console.log('Published NetShare HTTP service via mDNS on port', serverPort);
   
   // Browse for other NetShare instances
-  const browser = bonjour.find({ type: 'netshare' }, (service) => {
-    console.log('Found NetShare peer:', service.name);
-    if (mainWindow) {
-      mainWindow.webContents.send('peer-discovered', {
-        id: service.name,
-        name: service.name,
-        host: service.host,
-        port: service.port,
-        addresses: service.addresses,
-      });
+  const browser = bonjour.find({ type: 'http' }, (service) => {
+    if (service.txt && service.txt.protocol === 'webrtc') {
+      console.log('Found NetShare peer:', service.name);
+      if (mainWindow) {
+        mainWindow.webContents.send('peer-discovered', {
+          id: service.name,
+          name: service.name,
+          host: service.host,
+          port: service.port,
+          addresses: service.addresses,
+        });
+      }
     }
   });
   
@@ -194,6 +285,10 @@ ipcMain.handle('get-local-ip', async () => {
   }
   
   return addresses;
+});
+
+ipcMain.handle('get-server-port', async () => {
+  return serverPort;
 });
 
 ipcMain.handle('show-notification', async (event, { title, body }) => {
@@ -352,13 +447,16 @@ if (!gotTheLock) {
   });
 }
 
-// Configure permissions for camera/microphone
+// Configure permissions for camera/microphone/bluetooth
 app.whenReady().then(() => {
   const { session } = require('electron');
   
-  // Allow camera and microphone access
+  // Enable Web Bluetooth
+  app.commandLine.appendSwitch('enable-web-bluetooth');
+  
+  // Allow camera, microphone, and bluetooth access
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
+    if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
       callback(true);
     } else {
       callback(false);
@@ -366,7 +464,7 @@ app.whenReady().then(() => {
   });
   
   session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
-    if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
+    if (permission === 'media' || permission === 'camera' || permission === 'microphone' || permission === 'bluetooth') {
       return true;
     }
     return false;
@@ -374,7 +472,15 @@ app.whenReady().then(() => {
   
   createWindow();
   createTray();
+  initHttpServer(); // Start HTTP server for mobile access
   initBonjour();
+  
+  // Send server port to renderer after a short delay
+  setTimeout(() => {
+    if (mainWindow) {
+      mainWindow.webContents.send('server-port', serverPort);
+    }
+  }, 1000);
   
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -390,6 +496,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  if (httpServer) {
+    httpServer.close();
+  }
   if (bonjour) {
     bonjour.destroy();
   }

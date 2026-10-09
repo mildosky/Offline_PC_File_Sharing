@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // System info
   getLocalIP: () => ipcRenderer.invoke('get-local-ip'),
+  getServerPort: () => ipcRenderer.invoke('get-server-port'),
   
   // Notifications
   showNotification: (options) => ipcRenderer.invoke('show-notification', options),
@@ -44,6 +45,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onDeepLink: (callback) => {
     ipcRenderer.on('deep-link', (event, url) => callback(url));
+  },
+  onServerPort: (callback) => {
+    ipcRenderer.on('server-port', (event, port) => callback(port));
   },
   
   // Platform info

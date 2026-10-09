@@ -4,6 +4,8 @@ import { FileTransfer } from './components/FileTransfer';
 import { ChatPanel } from './components/ChatPanel';
 import { NetworkStatus } from './components/NetworkStatus';
 import { BluetoothPanel } from './components/BluetoothPanel';
+import { QRConnectionPanel } from './components/QRConnectionPanel';
+import { MobileConnect } from './components/MobileConnect';
 import { TitleBar } from './components/TitleBar';
 import { SettingsPanel } from './components/SettingsPanel';
 import { usePeerConnection } from './hooks/usePeerConnection';
@@ -13,12 +15,26 @@ import {
   Bluetooth as BluetoothIcon, Settings, 
   Download, Monitor, Wifi, Users,
   Zap, Shield, ChevronRight, FolderOpen,
-  Activity, Bell, Info
+  Activity, Bell, Info, Smartphone, QrCode
 } from 'lucide-react';
 
-type Tab = 'connections' | 'transfer' | 'chat' | 'bluetooth' | 'settings';
+type Tab = 'connections' | 'transfer' | 'chat' | 'bluetooth' | 'mobile' | 'settings';
+
+// Detect if we're in mobile mode
+const isMobileMode = () => {
+  return window.location.pathname.includes('/mobile') || 
+         window.location.hash.includes('mobile') ||
+         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
 
 function App() {
+  // Check if mobile mode
+  const [mobileMode, setMobileMode] = useState(isMobileMode());
+  
+  // If mobile mode, render mobile interface
+  if (mobileMode) {
+    return <MobileConnect />;
+  }
   const [activeTab, setActiveTab] = useState<Tab>('connections');
   const [isElectron, setIsElectron] = useState(false);
   const [localIPs, setLocalIPs] = useState<string[]>([]);
@@ -95,6 +111,7 @@ function App() {
 
   const navItems = [
     { id: 'connections' as Tab, label: 'Connections', icon: Network, badge: connectedPeers.length || undefined },
+    { id: 'mobile' as Tab, label: 'Mobile Connect', icon: Smartphone },
     { id: 'transfer' as Tab, label: 'File Transfer', icon: HardDrive, badge: activeTransfers.length || undefined },
     { id: 'chat' as Tab, label: 'Chat', icon: MessageSquare },
     { id: 'bluetooth' as Tab, label: 'Bluetooth', icon: BluetoothIcon },
@@ -242,6 +259,19 @@ function App() {
                   addDemoPeer={addDemoPeer}
                   isElectron={isElectron}
                 />
+              </div>
+            )}
+
+            {activeTab === 'mobile' && (
+              <div className="max-w-3xl mx-auto">
+                <QRConnectionPanel peerConnection={{
+                  myPeerId,
+                  myPeerName,
+                  generateConnectionCode,
+                  connectWithCode,
+                  applyAnswer,
+                  peers,
+                }} />
               </div>
             )}
 

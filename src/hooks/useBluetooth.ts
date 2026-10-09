@@ -50,10 +50,17 @@ export function useBluetooth() {
       // The user must select a device from the dialog
       console.log('Opening Bluetooth device picker...');
       
+      // Set a timeout to detect if dialog doesn't appear
+      const timeoutId = setTimeout(() => {
+        console.warn('Bluetooth dialog may not have appeared. Check if Bluetooth is enabled.');
+      }, 5000);
+      
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [NETSHARE_SERVICE_UUID],
       });
+
+      clearTimeout(timeoutId);
 
       if (device) {
         console.log('Device selected:', device.name);
@@ -88,8 +95,10 @@ export function useBluetooth() {
         setError('❌ Bluetooth operation not supported. Make sure Bluetooth is enabled on your device.');
       } else if (err.name === 'InvalidStateError') {
         setError('❌ Bluetooth adapter is not available. Please check your Bluetooth settings.');
+      } else if (err.name === 'NetworkError') {
+        setError('❌ Bluetooth adapter error. Please enable Bluetooth in your system settings and try again.');
       } else {
-        setError(`❌ Bluetooth scan failed: ${err.message || 'Unknown error'}`);
+        setError(`❌ Bluetooth scan failed: ${err.message || 'Unknown error'}. Please check browser console for details.`);
       }
     } finally {
       setIsScanning(false);

@@ -144,8 +144,23 @@ export function BluetoothPanel({
               <p className="text-xs text-indigo-300 text-center">
                 📱 A device picker dialog should appear. Select a Bluetooth device to connect.
               </p>
+              <p className="text-xs text-indigo-400 text-center mt-2">
+                ⚠️ If no dialog appears after 5 seconds, check the troubleshooting guide below.
+              </p>
             </div>
           )}
+
+          {/* Troubleshooting Guide */}
+          <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-3">
+            <p className="text-xs font-semibold text-gray-300 mb-2">🔧 Troubleshooting:</p>
+            <ul className="text-xs text-gray-400 space-y-1">
+              <li>• Make sure Bluetooth is enabled in Windows Settings</li>
+              <li>• Use Chrome, Edge, or Opera browser (Firefox/Safari not supported)</li>
+              <li>• Run via <code className="bg-gray-700 px-1 rounded">npm run dev</code> (localhost)</li>
+              <li>• Check browser console (F12) for detailed error messages</li>
+              <li>• Try restarting your Bluetooth adapter or computer</li>
+            </ul>
+          </div>
         </div>
       )}
 

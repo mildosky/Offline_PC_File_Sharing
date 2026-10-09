@@ -32,6 +32,9 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
   const [error, setError] = useState<string>('');
   const [selectedPeer, setSelectedPeer] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [detectedIP, setDetectedIP] = useState<string>('');
+  const [manualIP, setManualIP] = useState<string>('');
+  const [showManualIP, setShowManualIP] = useState(false);
   
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-scanner-container';
@@ -46,7 +49,13 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       const offer = await generateConnectionCode();
       
       // Get mobile connection URL with auto-detected IP (hash-based routing)
-      const mobileUrl = await getMobileConnectionURL(offer);
+      const mobileUrl = await getMobileConnectionURL(offer, manualIP || undefined);
+      
+      // Extract and store the detected IP for display
+      const ipMatch = mobileUrl.match(/http:\/\/([^:]+):/);
+      if (ipMatch) {
+        setDetectedIP(ipMatch[1]);
+      }
       
       setOfferCode(mobileUrl);
       setMode('showing-offer');
@@ -157,6 +166,36 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
             </ol>
           </div>
 
+          {/* Manual IP Override */}
+          <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-3">
+            <button
+              onClick={() => setShowManualIP(!showManualIP)}
+              className="w-full text-left text-sm text-yellow-300 hover:text-yellow-200 flex items-center justify-between"
+            >
+              <span>⚠️ Wrong IP detected? Click to manually override</span>
+              <span className="text-xs">{showManualIP ? '▼' : '▶'}</span>
+            </button>
+            
+            {showManualIP && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-yellow-400">
+                  Enter your PC's WiFi IP address (e.g., 192.168.1.100). Find it using:
+                  <br />
+                  <code className="bg-gray-800 px-2 py-1 rounded mt-1 inline-block">
+                    Windows: ipconfig | Mac/Linux: ifconfig
+                  </code>
+                </p>
+                <input
+                  type="text"
+                  value={manualIP}
+                  onChange={(e) => setManualIP(e.target.value)}
+                  placeholder="192.168.1.100"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleGenerateQR}
             disabled={isGenerating}
@@ -187,6 +226,18 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
       {/* Showing Offer QR */}
       {mode === 'showing-offer' && (
         <div className="space-y-4">
+          {/* Detected IP Display */}
+          {detectedIP && (
+            <div className="bg-green-900/20 border border-green-800 rounded-lg p-3">
+              <p className="text-xs text-green-400 text-center">
+                📍 Detected IP: <span className="font-mono font-bold">{detectedIP}</span>
+              </p>
+              <p className="text-xs text-green-500 text-center mt-1">
+                Make sure your phone is on the same WiFi network
+              </p>
+            </div>
+          )}
+
           <div className="bg-white rounded-lg p-6 flex flex-col items-center">
             <QRCodeSVG
               value={offerCode}

@@ -25,15 +25,51 @@ function createWindow() {
   });
 
   // Load the app
-  if (process.env.NODE_ENV === 'development') {
+  const isDev = process.env.NODE_ENV === 'development';
+  
+  if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // In production, the path is relative to the app directory
+    const htmlPath = path.join(__dirname, '../dist/index.html');
+    console.log('Loading HTML from:', htmlPath);
+    
+    // Check if file exists
+    const fs = require('fs');
+    if (!fs.existsSync(htmlPath)) {
+      console.error('HTML file not found at:', htmlPath);
+      // Try alternative path for packaged app
+      const altPath = path.join(process.resourcesPath || __dirname, '../dist/index.html');
+      console.log('Trying alternative path:', altPath);
+      mainWindow.loadFile(altPath);
+    } else {
+      mainWindow.loadFile(htmlPath);
+    }
   }
 
+  // Show window when ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+  });
+
+  // Handle load errors
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load:', errorCode, errorDescription);
+    mainWindow.loadURL(`data:text/html;charset=utf-8,
+      <html>
+        <body style="background: #030712; color: white; font-family: sans-serif; padding: 40px;">
+          <h1>Failed to Load Application</h1>
+          <p>Error: ${errorDescription}</p>
+          <p>Code: ${errorCode}</p>
+        </body>
+      </html>
+    `);
+  });
+
+  // Handle render crashes
+  mainWindow.webContents.on('render-process-gone', (event, details) => {
+    console.error('Renderer process gone:', details);
   });
 
   mainWindow.on('closed', () => {

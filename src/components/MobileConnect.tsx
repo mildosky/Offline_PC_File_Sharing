@@ -239,35 +239,44 @@ export const MobileConnect: React.FC<MobileConnectProps> = ({ offerCode: initial
                 </p>
               </div>
 
-              {/* Answer Code Display */}
+              {/* Connection Info */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <p className="text-xs text-gray-400 mb-2">Connected to:</p>
-                <p className="text-sm text-white font-medium mb-3">{peerName}</p>
+                <p className="text-sm text-white font-medium">{peerName}</p>
+              </div>
+
+              {/* Manual Entry Option - Prominent Button */}
+              <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4">
+                <p className="text-sm text-yellow-300 font-medium mb-2">
+                  ⌨️ QR scanning not working?
+                </p>
+                <p className="text-xs text-yellow-400/80 mb-3">
+                  Copy the answer code below and paste it on your PC:
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(answerCode).then(() => {
+                      alert('✅ Answer code copied to clipboard!\n\nNow go to your PC and paste it in the "Enter code manually" section.');
+                    }).catch(() => {
+                      // Fallback: show the code in an alert
+                      prompt('Copy this code:', answerCode);
+                    });
+                  }}
+                  className="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+                >
+                  📋 Copy Answer Code
+                </button>
                 
                 <details className="mt-3">
-                  <summary className="text-xs text-blue-400 cursor-pointer hover:text-blue-300">
-                    📋 Show answer code (for manual entry)
+                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-300">
+                    View code manually
                   </summary>
-                  <div className="mt-2 space-y-2">
-                    <p className="text-xs text-gray-400">
-                      If QR scanning doesn't work, copy this code and paste it on your PC:
-                    </p>
-                    <textarea
-                      value={answerCode}
-                      readOnly
-                      onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                      className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs text-gray-300 font-mono h-20 resize-none"
-                    />
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(answerCode);
-                        alert('Answer code copied!');
-                      }}
-                      className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium"
-                    >
-                      📋 Copy to Clipboard
-                    </button>
-                  </div>
+                  <textarea
+                    value={answerCode}
+                    readOnly
+                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                    className="w-full mt-2 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-xs text-gray-300 font-mono h-24 resize-none"
+                  />
                 </details>
               </div>
             </div>

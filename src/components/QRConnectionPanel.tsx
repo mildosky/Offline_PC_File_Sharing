@@ -98,11 +98,17 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
           console.log('[QR Scanner] Full result:', decodedResult);
           
           try {
-            await applyAnswer(decodedText);
-            setMode('connected');
-            setScanning(false);
-            await html5QrCode.stop();
-            console.log('[QR Scanner] Connection established successfully');
+            const success = await applyAnswer(decodedText);
+            
+            if (success) {
+              setMode('connected');
+              setScanning(false);
+              await html5QrCode.stop();
+              console.log('[QR Scanner] Connection established successfully');
+            } else {
+              console.error('[QR Scanner] applyAnswer returned false - invalid answer code');
+              setError('Invalid QR code. This is not a valid NetShare answer code.');
+            }
           } catch (err) {
             console.error('[QR Scanner] Failed to apply answer:', err);
             setError('Invalid QR code. Please try again.');
@@ -209,14 +215,20 @@ export const QRConnectionPanel: React.FC<QRConnectionPanelProps> = ({ peerConnec
     try {
       setError('');
       console.log('[Manual Input] Applying answer code...');
-      await applyAnswer(manualAnswer.trim());
-      setMode('connected');
-      setManualAnswer('');
-      setShowManualAnswer(false);
-      console.log('[Manual Input] Connection established successfully');
+      const success = await applyAnswer(manualAnswer.trim());
+      
+      if (success) {
+        setMode('connected');
+        setManualAnswer('');
+        setShowManualAnswer(false);
+        console.log('[Manual Input] Connection established successfully');
+      } else {
+        setError('Invalid answer code. The code must be a valid base64-encoded WebRTC answer from your phone.');
+        console.error('[Manual Input] applyAnswer returned false');
+      }
     } catch (err) {
       console.error('[Manual Input] Failed:', err);
-      setError('Invalid answer code. Please check and try again.');
+      setError('Invalid answer code format. Please copy the exact code from your phone.');
     }
   };
 

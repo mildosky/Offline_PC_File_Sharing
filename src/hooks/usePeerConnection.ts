@@ -355,32 +355,69 @@ export function usePeerConnection() {
 
   const applyAnswer = useCallback(async (answerCodeStr: string) => {
     try {
-      const decoded = JSON.parse(atob(answerCodeStr));
-      if (decoded.type === 'answer') {
-        const entries = [...peerConnections.current.entries()];
-        const lastEntry = entries[entries.length - 1];
-        if (lastEntry) {
-          const [peerId, pc] = lastEntry;
-          await pc.setRemoteDescription(decoded.sdp);
-          
-          setPeers(prev => {
-            const exists = prev.find(p => p.id === peerId);
-            if (exists) return prev;
-            return [...prev, {
-              id: peerId,
-              name: decoded.senderName,
-              status: 'connecting',
-              avatar: decoded.senderName.charAt(0).toUpperCase(),
-              lastSeen: new Date()
-            }];
-          });
-          return true;
-        }
+      // Validate input
+      if (!answerCodeStr || answerCodeStr.trim().length === 0) {
+        console.error('[applyAnswer] Empty answer code');
+        return false;
       }
+
+      // Try to decode base64
+      let decoded;
+      try {
+        decoded = JSON.parse(atob(answerCodeStr.trim()));
+      } catch (decodeErr) {
+        console.error('[applyAnswer] Failed to decode base64:', decodeErr);
+        return false;
+      }
+
+      // Validate structure
+      if (!decoded || decoded.type !== 'answer') {
+        console.error('[applyAnswer] Invalid answer type:', decoded?.type);
+        return false;
+      }
+
+      if (!decoded.sdp) {
+        console.error('[applyAnswer] Missing SDP in answer');
+        return false;
+      }
+
+      // Find pending connection
+      const entries = [...peerConnections.current.entries()];
+      if (entries.length === 0) {
+        console.error('[applyAnswer] No pending peer connections found');
+        return false;
+      }
+
+      const lastEntry = entries[entries.length - 1];
+      if (!lastEntry) {
+        console.error('[applyAnswer] Failed to get last peer connection');
+        return false;
+      }
+
+      const [peerId, pc] = lastEntry;
+      
+      // Apply the answer
+      await pc.setRemoteDescription(decoded.sdp);
+      
+      // Add peer to list
+      setPeers(prev => {
+        const exists = prev.find(p => p.id === peerId);
+        if (exists) return prev;
+        return [...prev, {
+          id: peerId,
+          name: decoded.senderName || 'Unknown',
+          status: 'connecting',
+          avatar: (decoded.senderName || 'U').charAt(0).toUpperCase(),
+          lastSeen: new Date()
+        }];
+      });
+
+      console.log('[applyAnswer] Successfully applied answer for peer:', peerId);
+      return true;
     } catch (err) {
-      console.error('Error applying answer:', err);
+      console.error('[applyAnswer] Error applying answer:', err);
+      return false;
     }
-    return false;
   }, []);
 
   // Wait for buffer to drain before sending more

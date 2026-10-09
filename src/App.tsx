@@ -26,6 +26,7 @@ function App() {
     isListening,
     generateConnectionCode,
     connectWithCode,
+    applyAnswer,
     sendFile,
     sendChatMessage,
     disconnectPeer,
@@ -120,35 +121,72 @@ function App() {
               peers={peers}
               generateConnectionCode={generateConnectionCode}
               connectWithCode={connectWithCode}
+              applyAnswer={applyAnswer}
               disconnectPeer={disconnectPeer}
               addDemoPeer={addDemoPeer}
             />
             
-            {/* How it works */}
+            {/* How it works - Manual Signaling Explanation */}
             <div className="mt-8 bg-gray-900/30 border border-gray-800/50 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-blue-400" />
-                How P2P Connection Works
+                How Manual Signaling Works (No Internet Required)
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mb-2">
-                    <span className="text-lg">1️⃣</span>
+              <p className="text-xs text-gray-500 mb-4">
+                Since there's no server to coordinate connections, you manually exchange connection codes between PCs. 
+                Both devices must be on the same local network (WiFi or Ethernet).
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <span className="text-xs">1</span>
+                    </div>
+                    <p className="text-xs font-medium text-blue-300">PC 1: Generate Code</p>
                   </div>
-                  <p className="text-xs text-gray-400">Click "Start Listening" to generate your connection code</p>
+                  <p className="text-xs text-gray-400">
+                    Click "Start Listening" → copy the generated connection code
+                  </p>
                 </div>
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mb-2">
-                    <span className="text-lg">2️⃣</span>
+                <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <span className="text-xs">2</span>
+                    </div>
+                    <p className="text-xs font-medium text-purple-300">Transfer Code to PC 2</p>
                   </div>
-                  <p className="text-xs text-gray-400">Share your code with the other PC (via USB, QR, etc.)</p>
+                  <p className="text-xs text-gray-400">
+                    Share via USB drive, local file share, print, or any offline method
+                  </p>
                 </div>
-                <div className="flex flex-col items-center text-center p-3">
-                  <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center mb-2">
-                    <span className="text-lg">3️⃣</span>
+                <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <span className="text-xs">3</span>
+                    </div>
+                    <p className="text-xs font-medium text-green-300">PC 2: Connect & Reply</p>
                   </div>
-                  <p className="text-xs text-gray-400">Connect directly — files transfer P2P, no internet needed!</p>
+                  <p className="text-xs text-gray-400">
+                    Paste the code → click "Connect" → copy the generated answer code
+                  </p>
                 </div>
+                <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
+                      <span className="text-xs">4</span>
+                    </div>
+                    <p className="text-xs font-medium text-orange-300">PC 1: Paste Answer</p>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Send the answer code back to PC 1 → paste it → connection established!
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
+                <p className="text-xs text-yellow-300/80 flex items-start gap-2">
+                  <span>💡</span>
+                  <span><strong>Tip:</strong> Once connected, all file transfers happen directly between devices over your local network — no internet, no cloud, no server involved. Your data stays completely private.</span>
+                </p>
               </div>
             </div>
           </div>

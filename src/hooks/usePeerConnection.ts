@@ -2,10 +2,12 @@ import { useCallback, useRef, useState } from 'react';
 import { Peer, FileTransferItem, ChatMessage } from '../types';
 import { generateId, formatFileSize } from '../utils/fileUtils';
 
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-];
+// No STUN/TURN servers - pure LAN/host-only mode
+// This ensures no internet connection is required
+const ICE_CONFIG: RTCConfiguration = {
+  iceServers: [],
+  iceTransportPolicy: 'all', // Use only local/host candidates
+};
 
 export function usePeerConnection() {
   const [peers, setPeers] = useState<Peer[]>([]);
@@ -117,7 +119,7 @@ export function usePeerConnection() {
   }, [handleDataChannelMessage, updatePeerStatus]);
 
   const createPeerConnection = useCallback((peerId: string, isInitiator: boolean) => {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection(ICE_CONFIG);
     
     pc.oniceconnectionstatechange = () => {
       if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
@@ -346,6 +348,38 @@ export function usePeerConnection() {
     setPeers(prev => prev.filter(p => p.id !== peerId));
   }, []);
 
+  const applyAnswer = useCallback(async (answerCodeStr: string) => {
+    try {
+      const decoded = JSON.parse(atob(answerCodeStr));
+      if (decoded.type === 'answer') {
+        // Find the most recent pending connection
+        const entries = [...peerConnections.current.entries()];
+        const lastEntry = entries[entries.length - 1];
+        if (lastEntry) {
+          const [peerId, pc] = lastEntry;
+          await pc.setRemoteDescription(decoded.sdp);
+          
+          setPeers(prev => {
+            // Check if peer already exists
+            const exists = prev.find(p => p.id === peerId);
+            if (exists) return prev;
+            return [...prev, {
+              id: peerId,
+              name: decoded.senderName,
+              status: 'connecting',
+              avatar: decoded.senderName.charAt(0).toUpperCase(),
+              lastSeen: new Date()
+            }];
+          });
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('Error applying answer:', err);
+    }
+    return false;
+  }, []);
+
   // Demo mode - simulate connections for testing UI
   const addDemoPeer = useCallback(() => {
     const demoNames = ['Alpha-PC', 'Beta-Workstation', 'Gamma-Laptop', 'Delta-Desktop', 'Epsilon-Mac'];
@@ -389,6 +423,7 @@ export function usePeerConnection() {
     isListening,
     generateConnectionCode,
     connectWithCode,
+    applyAnswer,
     sendFile,
     sendChatMessage,
     disconnectPeer,

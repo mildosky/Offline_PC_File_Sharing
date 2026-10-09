@@ -10,6 +10,7 @@ interface ConnectionPanelProps {
   peers: Peer[];
   generateConnectionCode: () => Promise<string>;
   connectWithCode: (code: string) => Promise<string | null>;
+  applyAnswer: (answerCode: string) => Promise<boolean>;
   disconnectPeer: (peerId: string) => void;
   addDemoPeer: () => void;
 }
@@ -22,6 +23,7 @@ export function ConnectionPanel({
   peers,
   generateConnectionCode,
   connectWithCode,
+  applyAnswer,
   disconnectPeer,
   addDemoPeer,
 }: ConnectionPanelProps) {
@@ -31,6 +33,9 @@ export function ConnectionPanel({
   const [showConnect, setShowConnect] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [editingName, setEditingName] = useState(false);
+  const [showAnswerInput, setShowAnswerInput] = useState(false);
+  const [answerInput, setAnswerInput] = useState('');
+  const [applyingAnswer, setApplyingAnswer] = useState(false);
 
   const handleGenerateCode = async () => {
     await generateConnectionCode();
@@ -56,6 +61,21 @@ export function ConnectionPanel({
       console.error(err);
     }
     setConnecting(false);
+  };
+
+  const handleApplyAnswer = async () => {
+    if (!answerInput.trim()) return;
+    setApplyingAnswer(true);
+    try {
+      const success = await applyAnswer(answerInput.trim());
+      if (success) {
+        setAnswerInput('');
+        setShowAnswerInput(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setApplyingAnswer(false);
   };
 
   const statusColor = (status: Peer['status']) => {
@@ -135,6 +155,40 @@ export function ConnectionPanel({
           </div>
         )}
       </div>
+
+      {/* Apply Answer Code (for PC 1 after receiving answer from PC 2) */}
+      {isListening && (
+        <div className="space-y-3">
+          <button
+            onClick={() => setShowAnswerInput(!showAnswerInput)}
+            className="w-full py-2.5 border border-green-700/50 hover:border-green-600 text-green-300 hover:text-green-200 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-green-500/5"
+          >
+            <Check className="w-4 h-4" />
+            Paste Answer Code from Other PC
+          </button>
+
+          {showAnswerInput && (
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-green-700/30 space-y-3 animate-in">
+              <p className="text-xs text-gray-400">
+                After the other PC connects and generates an answer code, paste it here to complete the handshake:
+              </p>
+              <textarea
+                value={answerInput}
+                onChange={(e) => setAnswerInput(e.target.value)}
+                placeholder="Paste answer code here..."
+                className="w-full bg-gray-700/50 text-white text-xs p-3 rounded-lg border border-gray-600 focus:border-green-500 focus:outline-none resize-none h-20 font-mono"
+              />
+              <button
+                onClick={handleApplyAnswer}
+                disabled={applyingAnswer || !answerInput.trim()}
+                className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-medium text-sm transition-all"
+              >
+                {applyingAnswer ? 'Connecting...' : 'Complete Connection'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Connect to Peer */}
       <div className="space-y-3">
